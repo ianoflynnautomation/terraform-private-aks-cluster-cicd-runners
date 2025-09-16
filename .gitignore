@@ -1,0 +1,385 @@
+# =============================================================================
+# AZURE & TERRAFORM SECURITY-FOCUSED .GITIGNORE
+# =============================================================================
+# This file ensures sensitive data, credentials, and security-related files
+# are never committed to version control.
+
+# =============================================================================
+# AZURE CLI & DEVELOPER CLI
+# =============================================================================
+.azure/
+.azure-dev/
+.azure-dev-cli/
+.azd/
+azure-dev-cli.json
+.azure-dev-cli.json
+
+# =============================================================================
+# TERRAFORM FILES
+# =============================================================================
+# Terraform state files (contain sensitive data)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+*.tfstate.lock.info
+
+# Terraform lock files (can contain sensitive provider info)
+.terraform.lock.hcl
+
+# Terraform directories
+**/.terraform/
+.terraform/
+.terraform.lock.hcl
+
+# Terraform crash logs
+crash.log
+crash.*.log
+crash_*.log
+
+# =============================================================================
+# TERRAFORM VARIABLES & CONFIGURATION
+# =============================================================================
+# Variable files (often contain secrets)
+*.tfvars
+*.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+terraform.tfvars
+terraform.tfvars.json
+secrets.tfvars
+secrets.tfvars.json
+prod.tfvars
+prod.tfvars.json
+staging.tfvars
+staging.tfvars.json
+dev.tfvars
+dev.tfvars.json
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform configuration
+.terraformrc
+terraform.rc
+.terraformrc.json
+
+# =============================================================================
+# CREDENTIALS & SECRETS
+# =============================================================================
+# Environment files
+.env
+.env.*
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.test
+
+# Azure credentials
+.azure/credentials
+.azure/accessTokens.json
+.azure/azureProfile.json
+.azure/clouds.config
+.azure/config
+.azure/msal_*.json
+
+# Service principal files
+service-principal.json
+sp.json
+azure-credentials.json
+azure-sp.json
+
+# Key files and certificates
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.truststore
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+id_ecdsa
+id_ecdsa.pub
+
+# Azure Key Vault exports
+keyvault-*.json
+secrets-*.json
+
+# =============================================================================
+# AZURE SPECIFIC FILES
+# =============================================================================
+# Azure Resource Manager templates with secrets
+*.parameters.json
+*parameters.json
+*parameters*.json
+
+# Azure CLI outputs
+az-output.json
+azure-output.json
+
+# Azure DevTest Labs artifacts with secrets
+artifacts/*/secrets/
+artifacts/*/credentials/
+artifacts/*/keys/
+
+# =============================================================================
+# LOGS & TEMPORARY FILES
+# =============================================================================
+# Log files
+*.log
+logs/
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# =============================================================================
+# IDE & EDITOR FILES
+# =============================================================================
+# VSCode (selective inclusion)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+!.vscode/snippets/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# =============================================================================
+# DEVELOPMENT TOOLS
+# =============================================================================
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+vendor/
+
+# =============================================================================
+# SECURITY SCANNING & COMPLIANCE
+# =============================================================================
+# Security scan results
+security-scan-results.json
+vulnerability-report.json
+compliance-report.json
+
+# SAST/DAST tool outputs
+*.sarif
+*.json.sarif
+
+# =============================================================================
+# BACKUP & ARCHIVE FILES
+# =============================================================================
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# =============================================================================
+# MONITORING & OBSERVABILITY
+# =============================================================================
+# Monitoring configuration with secrets
+monitoring-secrets.json
+observability-config.json
+
+# =============================================================================
+# CI/CD SECRETS
+# =============================================================================
+# GitHub Actions secrets
+.github/secrets/
+.github/workflows/secrets/
+
+# Azure DevOps
+.azuredevops/
+azure-pipelines-secrets.json
+
+# Jenkins
+.jenkins/
+jenkins-secrets.xml
+
+# =============================================================================
+# CLOUD PROVIDER SPECIFIC
+# =============================================================================
+# AWS (if used alongside Azure)
+.aws/
+aws-credentials.json
+
+# Google Cloud
+.gcloud/
+gcp-credentials.json
+service-account.json
+
+# =============================================================================
+# DATABASE & STORAGE
+# =============================================================================
+# Database dumps
+*.sql
+*.db
+*.sqlite
+*.sqlite3
+
+# Storage account keys
+storage-keys.json
+storage-account-keys.json
+
+# =============================================================================
+# NETWORK & SECURITY
+# =============================================================================
+# Network configuration with secrets
+network-secrets.json
+vpn-config.json
+firewall-rules.json
+
+# SSL/TLS certificates
+ssl/
+tls/
+certs/
+certificates/
+
+# =============================================================================
+# CUSTOM EXCLUSIONS
+# =============================================================================
+# Add any project-specific files that should be ignored
+# Example:
+# project-secrets/
+# local-config/
+# sensitive-data/
+
+# =============================================================================
+# VERSION CONTROL
+# =============================================================================
+# Git
+.git/
+.gitignore.bak
+
+# SVN
+.svn/
+
+# Mercurial
+.hg/
+
+# =============================================================================
+# PACKAGE MANAGERS
+# =============================================================================
+# Terraform providers cache
+.terraform/providers/
+
+# Package manager lock files (keep these for reproducibility)
+# package-lock.json
+# Pipfile.lock
+# go.sum
+
+# =============================================================================
+# DOCUMENTATION WITH SECRETS
+# =============================================================================
+# Documentation that might contain secrets
+docs/secrets/
+docs/credentials/
+docs/private/
+
+# =============================================================================
+# TESTING
+# =============================================================================
+# Test outputs that might contain sensitive data
+test-results/
+coverage/
+*.coverage
+.pytest_cache/
+
+# =============================================================================
+# MISC
+# =============================================================================
+# Extension files
+*.vsix
+
+# History files
+.history/
+.histfile
+
+# Local development files
+local/
+dev-local/

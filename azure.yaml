@@ -1,0 +1,4 @@
+infra:
+  provider: terraform
+  
+name: private-aks-cluster
