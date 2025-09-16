@@ -63,8 +63,4 @@ resource "azurerm_monitor_diagnostic_setting" "settings" {
   enabled_log {
     category = "AzurePolicyEvaluationDetails"
   }
-
-  metric {
-    category = "AllMetrics"
-  }
 }
