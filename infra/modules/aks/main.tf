@@ -2,9 +2,9 @@ terraform {
   required_providers {
     azurerm = {
       source = "hashicorp/azurerm"
+      version = "4.42.0"
     }
   }
-  required_version = ">= 4.42.0"
 }
 
 resource "azurerm_user_assigned_identity" "aks_identity" {

@@ -265,12 +265,6 @@ variable "default_node_pool_subnet_name" {
   type        = string
 }
 
-variable "hub_firewall_subnet_address_prefix" {
-  description = "Specifies the address prefix of the firewall subnet"
-  default     = ["10.1.0.0/24"]
-  type        = list(string)
-}
-
 variable "default_node_pool_subnet_address_prefix" {
   description = "Specifies the address prefix of the subnet that hosts the default node pool"
   default     = ["10.0.0.0/20"]
@@ -337,11 +331,6 @@ variable "default_node_pool_node_count" {
   default     = 3
 }
 
-variable "additional_node_pool_subnet_name" {
-  description = "Specifies the name of the subnet that hosts the default node pool"
-  default     = "UserSubnet"
-  type        = string
-}
 
 variable "additional_node_pool_subnet_address_prefix" {
   description = "Specifies the address prefix of the subnet that hosts the additional node pool"
@@ -454,11 +443,6 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "location" {
-  type        = string
-  description = "The Azure region where resources will be deployed."
-  default     = "westeurope"
-}
 
 variable "spoke_vnet_subnets" {
   type        = any
@@ -479,11 +463,6 @@ variable "additional_node_pool_subnet_name" {
   type        = string
 }
 
-variable "additional_node_pool_subnet_address_prefix" {
-  description = "Specifies the address prefix of the subnet that hosts the additional node pool"
-  type        = list(string)
-  default     = ["10.0.16.0/20"]
-}
 
 variable "additional_node_pool_name" {
   description = "(Required) Specifies the name of the node pool."
@@ -636,10 +615,4 @@ variable "firewall_zones" {
   description = "Specifies the availability zones of the Azure Firewall"
   default     = ["1", "2", "3"]
   type        = list(string)
-}
-
-variable "vm_name" {
-  description = "Specifies the name of the jumpbox virtual machine"
-  default     = "TestVm"
-  type        = string
 }
