@@ -1,12 +1,6 @@
 
 data "azurerm_client_config" "current" {}
 
-resource "random_string" "unique_suffix" {
-  length  = 8
-  special = false
-  upper   = false
-}
-
 # ------------------------------------------------------------------------------------------------------
 # Resource Group: Central resource container for the workload
 # ------------------------------------------------------------------------------------------------------
