@@ -117,7 +117,7 @@ module "aks_cluster" {
   sku_tier                             = var.sku_tier
   default_node_pool_name               = var.default_node_pool_name
   default_node_pool_vm_size            = var.default_node_pool_vm_size
-  vnet_subnet_id                       = module.aks_network.subnet_ids[var.default_node_pool_subnet_name]
+  vnet_subnet_id                       = module.hub_network.subnet_ids[var.default_node_pool_subnet_name]
   default_node_pool_availability_zones = var.default_node_pool_availability_zones
   # default_node_pool_node_labels            = var.default_node_pool_node_labels
   # default_node_pool_node_taints            = var.default_node_pool_node_taints
@@ -155,7 +155,7 @@ module "aks_cluster" {
 
 module "node_pool" {
   source                 = "./modules/node_pool"
-  resource_group_name    = azurerm_resource_group.rg.name
+  resource_group_name    = azurerm_resource_group.main.name
   kubernetes_cluster_id  = module.aks_cluster.id
   name                   = var.additional_node_pool_name
   vm_size                = var.additional_node_pool_vm_size
@@ -163,7 +163,7 @@ module "node_pool" {
   node_labels            = var.additional_node_pool_node_labels
   node_taints            = var.additional_node_pool_node_taints
   availability_zones     = var.additional_node_pool_availability_zones
-  vnet_subnet_id         = module.aks_network.subnet_ids[var.additional_node_pool_subnet_name]
+  vnet_subnet_id         = module.hub_network.subnet_ids[var.additional_node_pool_subnet_name]
   enable_auto_scaling    = var.additional_node_pool_enable_auto_scaling
   enable_host_encryption = var.additional_node_pool_enable_host_encryption
   enable_node_public_ip  = var.additional_node_pool_enable_node_public_ip
@@ -182,7 +182,7 @@ module "node_pool" {
 # module "firewall" {
 #   source                     = "./modules/firewall"
 #   name                       = var.firewall_name
-#   resource_group_name        = azurerm_resource_group.rg.name
+#   resource_group_name        = azurerm_resource_group.main.name
 #   zones                      = var.firewall_zones
 #   threat_intel_mode          = var.firewall_threat_intel_mode
 #   location                   = var.location
@@ -197,7 +197,7 @@ module "node_pool" {
 
 # module "routetable" {
 #   source              = "./modules/route_table"
-#   resource_group_name = azurerm_resource_group.rg.name
+#   resource_group_name = azurerm_resource_group.main.name
 #   location            = var.location
 #   route_table_name    = local.route_table_name
 #   route_name          = local.route_name
@@ -205,12 +205,12 @@ module "node_pool" {
 #   subnets_to_associate = {
 #     (var.default_node_pool_subnet_name) = {
 #       subscription_id      = data.azurerm_client_config.current.subscription_id
-#       resource_group_name  = azurerm_resource_group.rg.name
+#       resource_group_name  = azurerm_resource_group.main.name
 #       virtual_network_name = module.hub_vnet.name
 #     }
 #     (var.additional_node_pool_subnet_name) = {
 #       subscription_id      = data.azurerm_client_config.current.subscription_id
-#       resource_group_name  = azurerm_resource_group.rg.name
+#       resource_group_name  = azurerm_resource_group.main.name
 #       virtual_network_name = module.hub_vnet.name
 #     }
 #   }
