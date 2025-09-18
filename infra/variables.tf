@@ -8,11 +8,6 @@ variable "location" {
   type        = string
 }
 
-variable "resource_group_name" {
-  description = "(Required) Specifies the resource group name"
-  type        = string
-}
-
 variable "vm_name" {
   description = "Specifies the name of the self-hosted agent virtual machine"
   default     = "TestVm"
