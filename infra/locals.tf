@@ -24,5 +24,5 @@ locals {
   spoke_vnet_name      = "vnet-${local.name_prefix}"
   aks_name             = "aks-${local.name_prefix}"
   kv_name              = "kv-${local.name_prefix}"
-  storage_account_name = "st${local.sanitized_name_prefix}${random_string.unique_suffix.result}"
+  storage_account_name = "st${local.sanitized_name_prefix}"
 }

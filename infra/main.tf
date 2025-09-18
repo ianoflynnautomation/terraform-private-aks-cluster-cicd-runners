@@ -15,7 +15,7 @@ resource "azurerm_resource_group" "main" {
 # Monitoring: Log Analytics Workspace for collecting logs and metrics
 # ------------------------------------------------------------------------------------------------------
 
-module "log_analytics" {
+module "log_analytic_workspace" {
   source              = "./modules/log_analytics_workspace"
   name                = local.law_name
   location            = azurerm_resource_group.main.location
@@ -28,7 +28,7 @@ module "log_analytics" {
 # Networking: Hub and Spoke virtual networks
 # ------------------------------------------------------------------------------------------------------
 
-module "aks_vnet" {
+module "hub_vnet" {
   source                     = "./modules/virtual_network"
   name                       = local.hub_vnet_name
   address_space              = var.vm_vnet_address_space
@@ -150,7 +150,7 @@ module "aks_cluster" {
   azure_policy_enabled                     = var.azure_policy_enabled
   http_application_routing_enabled         = var.http_application_routing_enabled
 
-  depends_on = [module.routetable]
+  #depends_on = [module.routetable]
 }
 
 module "node_pool" {
@@ -176,7 +176,7 @@ module "node_pool" {
   priority               = var.additional_node_pool_priority
   tags                   = local.tags
 
-  depends_on = [module.routetable]
+  #depends_on = [module.routetable]
 }
 
 # module "firewall" {
@@ -206,12 +206,12 @@ module "node_pool" {
 #     (var.default_node_pool_subnet_name) = {
 #       subscription_id      = data.azurerm_client_config.current.subscription_id
 #       resource_group_name  = azurerm_resource_group.rg.name
-#       virtual_network_name = module.aks_vnet.name
+#       virtual_network_name = module.hub_vnet.name
 #     }
 #     (var.additional_node_pool_subnet_name) = {
 #       subscription_id      = data.azurerm_client_config.current.subscription_id
 #       resource_group_name  = azurerm_resource_group.rg.name
-#       virtual_network_name = module.aks_vnet.name
+#       virtual_network_name = module.hub_vnet.name
 #     }
 #   }
 # }

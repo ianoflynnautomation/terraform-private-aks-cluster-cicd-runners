@@ -39,12 +39,3 @@ variable "peering_name_2_to_1" {
   type        = string
   default     = "peering2to1"
 }
-
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "4.20.0"
-    }
-  }
-}
