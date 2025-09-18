@@ -117,7 +117,7 @@ module "aks_cluster" {
   sku_tier                             = var.sku_tier
   default_node_pool_name               = var.default_node_pool_name
   default_node_pool_vm_size            = var.default_node_pool_vm_size
-  vnet_subnet_id                       = module.hub_network.subnet_ids[var.default_node_pool_subnet_name]
+  vnet_subnet_id                       = module.hub_vnet.subnet_ids[var.default_node_pool_subnet_name]
   default_node_pool_availability_zones = var.default_node_pool_availability_zones
   # default_node_pool_node_labels            = var.default_node_pool_node_labels
   # default_node_pool_node_taints            = var.default_node_pool_node_taints
@@ -163,7 +163,7 @@ module "node_pool" {
   node_labels            = var.additional_node_pool_node_labels
   node_taints            = var.additional_node_pool_node_taints
   availability_zones     = var.additional_node_pool_availability_zones
-  vnet_subnet_id         = module.hub_network.subnet_ids[var.additional_node_pool_subnet_name]
+  vnet_subnet_id         = module.hub_vnet.subnet_ids[var.additional_node_pool_subnet_name]
   enable_auto_scaling    = var.additional_node_pool_enable_auto_scaling
   enable_host_encryption = var.additional_node_pool_enable_host_encryption
   enable_node_public_ip  = var.additional_node_pool_enable_node_public_ip
@@ -189,7 +189,7 @@ module "node_pool" {
 #   sku_name                   = var.firewall_sku_name
 #   sku_tier                   = var.firewall_sku_tier
 #   pip_name                   = "${var.firewall_name}PublicIp"
-#   subnet_id                  = module.hub_network.subnet_ids["AzureFirewallSubnet"]
+#   subnet_id                  = module.hub_vnet.subnet_ids["AzureFirewallSubnet"]
 #   log_analytics_workspace_id = module.log_analytics_workspace.id
 # }
 
