@@ -21,6 +21,8 @@ jobs:
       RS_STORAGE_ACCOUNT: ${{ vars.RS_STORAGE_ACCOUNT }}
       RS_CONTAINER_NAME: ${{ vars.RS_CONTAINER_NAME }}
       ARM_USE_OIDC: "true"
+      TERRAFORM_VERSION: 1.13.2
+      
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,7 +31,7 @@ jobs:
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.13.2
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
 
       - name: Log in with Azure (Federated Credentials)
         run: |

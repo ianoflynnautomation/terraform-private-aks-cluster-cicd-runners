@@ -1,7 +1,7 @@
-variable "subscription_id" {
-  description = "Specifies the subscription id"
-  type        = string
-}
+# variable "subscription_id" {
+#   description = "Specifies the subscription id"
+#   type        = string
+# }
 
 variable "location" {
   description = "(Required) Specifies the location for the resource group and all the resources"
