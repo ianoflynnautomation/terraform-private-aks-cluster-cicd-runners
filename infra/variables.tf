@@ -6,13 +6,9 @@ variable "subscription_id" {
 variable "location" {
   description = "(Required) Specifies the location for the resource group and all the resources"
   type        = string
+  default = "switzerlandnorth"
 }
 
-variable "vm_name" {
-  description = "Specifies the name of the self-hosted agent virtual machine"
-  default     = "TestVm"
-  type        = string
-}
 
 variable "admin_username" {
   description = "(Required) Specifies the admin username of the self-hosted agent virtual machine and AKS worker nodes."
@@ -51,12 +47,6 @@ variable "storage_account_tier" {
     condition     = contains(["Standard", "Premium"], var.storage_account_tier)
     error_message = "The account tier of the storage account is invalid."
   }
-}
-
-variable "scripts_container_name" {
-  description = "Specifies the name of the container where the scripts are stored"
-  type        = string
-  default     = "scripts"
 }
 
 variable "vm_vnet_address_space" {
@@ -371,11 +361,6 @@ variable "azure_rbac_enabled" {
   description = "(Optional) Is Role Based Access Control based on Microsoft Entra ID enabled?"
   default     = true
   type        = bool
-}
-
-variable "ssh_public_key" {
-  description = "(Required) Specifies the SSH public key for the jumpbox virtual machine and AKS worker nodes."
-  type        = string
 }
 
 variable "keda_enabled" {
