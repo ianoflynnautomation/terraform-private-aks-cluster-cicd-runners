@@ -15,7 +15,7 @@ resource "azurerm_resource_group" "main" {
 # Monitoring: Log Analytics Workspace for collecting logs and metrics
 # ------------------------------------------------------------------------------------------------------
 
-module "log_analytic_workspace" {
+module "log_analytics_workspace" {
   source              = "./modules/log_analytics_workspace"
   name                = local.law_name
   location            = azurerm_resource_group.main.location
