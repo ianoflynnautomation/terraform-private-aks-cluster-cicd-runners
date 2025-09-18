@@ -54,6 +54,8 @@ staging.tfvars
 staging.tfvars.json
 dev.tfvars
 dev.tfvars.json
+# this is needed for azd
+!main.tfvars.json
 
 # Override files
 override.tf
