@@ -52,16 +52,16 @@ resource "azurerm_key_vault" "key_vault" {
 }
 
 
-resource "azurerm_monitor_diagnostic_setting" "settings" {
-  name                       = "DiagnosticsSettings"
-  target_resource_id         = azurerm_key_vault.key_vault.id
-  log_analytics_workspace_id = var.log_analytics_workspace_id
+# resource "azurerm_monitor_diagnostic_setting" "settings" {
+#   name                       = "DiagnosticsSettings"
+#   target_resource_id         = azurerm_key_vault.key_vault.id
+#   log_analytics_workspace_id = var.log_analytics_workspace_id
 
-  enabled_log {
-    category = "AuditEvent"
-  }
+#   enabled_log {
+#     category = "AuditEvent"
+#   }
 
-  enabled_log {
-    category = "AzurePolicyEvaluationDetails"
-  }
-}
+#   enabled_log {
+#     category = "AzurePolicyEvaluationDetails"
+#   }
+# }

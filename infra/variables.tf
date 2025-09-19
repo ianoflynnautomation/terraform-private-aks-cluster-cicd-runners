@@ -6,7 +6,7 @@
 variable "location" {
   description = "(Required) Specifies the location for the resource group and all the resources"
   type        = string
-  default = "switzerlandnorth"
+  default     = "switzerlandnorth"
 }
 
 
@@ -192,7 +192,7 @@ variable "aks_cluster_name" {
 
 variable "kubernetes_version" {
   description = "Specifies the AKS Kubernetes version"
-  default     = "1.21.1"
+  default     = "1.33.2"
   type        = string
 }
 
@@ -439,7 +439,7 @@ variable "spoke_vnet_subnets" {
 
 variable "additional_node_pool_subnet_name" {
   description = "Specifies the name of the subnet that hosts the default node pool"
-  default     =  "UserSubnet"
+  default     = "UserSubnet"
   type        = string
 }
 
@@ -459,85 +459,85 @@ variable "additional_node_pool_vm_size" {
 variable "additional_node_pool_availability_zones" {
   description = "(Optional) A list of Availability Zones where the Nodes in this Node Pool should be created in. Changing this forces a new resource to be created."
   type        = list(string)
-  default = ["1", "2", "3"]
+  default     = ["1", "2", "3"]
 }
 
 variable "additional_node_pool_enable_auto_scaling" {
   description = "(Optional) Whether to enable auto-scaler. Defaults to false."
-  type          = bool
-  default       = true
+  type        = bool
+  default     = true
 }
 
 variable "additional_node_pool_enable_host_encryption" {
   description = "(Optional) Should the nodes in this Node Pool have host encryption enabled? Defaults to false."
-  type          = bool
-  default       = false
-} 
+  type        = bool
+  default     = false
+}
 
 variable "additional_node_pool_enable_node_public_ip" {
   description = "(Optional) Should each node have a Public IP Address? Defaults to false. Changing this forces a new resource to be created."
-  type          = bool
-  default       = false
-} 
+  type        = bool
+  default     = false
+}
 
 variable "additional_node_pool_max_pods" {
   description = "(Optional) The maximum number of pods that can run on each agent. Changing this forces a new resource to be created."
-  type          = number
-  default       = 50
+  type        = number
+  default     = 50
 }
 
 variable "additional_node_pool_mode" {
   description = "(Optional) Should this Node Pool be used for System or User resources? Possible values are System and User. Defaults to User."
-  type          = string
-  default       = "User"
-} 
+  type        = string
+  default     = "User"
+}
 
 variable "additional_node_pool_node_labels" {
   description = "(Optional) A map of Kubernetes labels which should be applied to nodes in this Node Pool. Changing this forces a new resource to be created."
-  type          = map(any)
-  default       = {}
-} 
+  type        = map(any)
+  default     = {}
+}
 
 variable "additional_node_pool_node_taints" {
   description = "(Optional) A list of Kubernetes taints which should be applied to nodes in the agent pool (e.g key=value:NoSchedule). Changing this forces a new resource to be created."
-  type          = list(string)
-  default       = []
-} 
+  type        = list(string)
+  default     = []
+}
 
 variable "additional_node_pool_os_disk_type" {
   description = "(Optional) The type of disk which should be used for the Operating System. Possible values are Ephemeral and Managed. Defaults to Managed. Changing this forces a new resource to be created."
-  type          = string
-  default       = "Ephemeral"
-} 
+  type        = string
+  default     = "Ephemeral"
+}
 
 variable "additional_node_pool_os_type" {
   description = "(Optional) The Operating System which should be used for this Node Pool. Changing this forces a new resource to be created. Possible values are Linux and Windows. Defaults to Linux."
-  type          = string
-  default       = "Linux"
-} 
+  type        = string
+  default     = "Linux"
+}
 
 variable "additional_node_pool_priority" {
   description = "(Optional) The Priority for Virtual Machines within the Virtual Machine Scale Set that powers this Node Pool. Possible values are Regular and Spot. Defaults to Regular. Changing this forces a new resource to be created."
-  type          = string
-  default       = "Regular"
-} 
+  type        = string
+  default     = "Regular"
+}
 
 variable "additional_node_pool_max_count" {
   description = "(Required) The maximum number of nodes which should exist within this Node Pool. Valid values are between 0 and 1000 and must be greater than or equal to min_count."
-  type          = number
-  default       = 10
+  type        = number
+  default     = 10
 }
 
 variable "additional_node_pool_min_count" {
   description = "(Required) The minimum number of nodes which should exist within this Node Pool. Valid values are between 0 and 1000 and must be less than or equal to max_count."
-  type          = number
-  default       = 3
+  type        = number
+  default     = 3
 }
 
 variable "additional_node_pool_node_count" {
   description = "(Optional) The initial number of nodes which should exist within this Node Pool. Valid values are between 0 and 1000 and must be a value in the range min_count - max_count."
-  type          = number
-  default       = 3
+  type        = number
+  default     = 3
 }
 
 variable "hub_firewall_subnet_address_prefix" {
@@ -564,7 +564,7 @@ variable "firewall_sku_name" {
   type        = string
 
   validation {
-    condition = contains(["AZFW_Hub", "AZFW_VNet" ], var.firewall_sku_name)
+    condition     = contains(["AZFW_Hub", "AZFW_VNet"], var.firewall_sku_name)
     error_message = "The value of the sku name property of the firewall is invalid."
   }
 }
@@ -575,7 +575,7 @@ variable "firewall_sku_tier" {
   type        = string
 
   validation {
-    condition = contains(["Premium", "Standard", "Basic" ], var.firewall_sku_tier)
+    condition     = contains(["Premium", "Standard", "Basic"], var.firewall_sku_tier)
     error_message = "The value of the sku tier property of the firewall is invalid."
   }
 }
@@ -586,7 +586,7 @@ variable "firewall_threat_intel_mode" {
   type        = string
 
   validation {
-    condition = contains(["Off", "Alert", "Deny"], var.firewall_threat_intel_mode)
+    condition     = contains(["Off", "Alert", "Deny"], var.firewall_threat_intel_mode)
     error_message = "The threat intel mode is invalid."
   }
 }

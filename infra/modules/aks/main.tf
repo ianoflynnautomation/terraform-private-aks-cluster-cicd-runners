@@ -34,6 +34,7 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   oidc_issuer_enabled              = var.oidc_issuer_enabled
   open_service_mesh_enabled        = var.open_service_mesh_enabled
   image_cleaner_enabled            = var.image_cleaner_enabled
+  image_cleaner_interval_hours     = var.image_cleaner_interval_hours
   azure_policy_enabled             = var.azure_policy_enabled
   http_application_routing_enabled = var.http_application_routing_enabled
 

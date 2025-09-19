@@ -71,7 +71,7 @@ variable "sku_tier" {
 
 variable "kubernetes_version" {
   description = "Specifies the AKS Kubernetes version"
-  default     = "1.21.1"
+  default     = "1.33.2"
   type        = string
 }
 
@@ -155,7 +155,7 @@ variable "default_node_pool_enable_node_public_ip" {
 variable "default_node_pool_max_pods" {
   description = "(Optional) The maximum number of pods that can run on each agent. Changing this forces a new resource to be created."
   type          = number
-  default       = 50
+  default       = 10
 }
 
 # variable "default_node_pool_node_labels" {
@@ -295,6 +295,11 @@ variable "image_cleaner_enabled" {
   description = "(Optional) Specifies whether Image Cleaner is enabled."
   type        = bool
   default     = true
+}
+
+variable "image_cleaner_interval_hours" {
+  description = "(Optional) Sets the image cleanr interval hours"
+  default = 48
 }
 
 variable "azure_policy_enabled" {

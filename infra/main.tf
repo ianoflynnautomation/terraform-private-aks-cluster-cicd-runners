@@ -150,7 +150,7 @@ module "aks_cluster" {
   azure_policy_enabled                     = var.azure_policy_enabled
   http_application_routing_enabled         = var.http_application_routing_enabled
 
-  #depends_on = [module.routetable]
+  depends_on = [module.routetable]
 }
 
 module "node_pool" {
@@ -176,60 +176,50 @@ module "node_pool" {
   priority               = var.additional_node_pool_priority
   tags                   = local.tags
 
-  #depends_on = [module.routetable]
+  depends_on = [module.routetable]
 }
 
-# module "firewall" {
-#   source                     = "./modules/firewall"
-#   name                       = var.firewall_name
-#   resource_group_name        = azurerm_resource_group.main.name
-#   zones                      = var.firewall_zones
-#   threat_intel_mode          = var.firewall_threat_intel_mode
-#   location                   = var.location
-#   sku_name                   = var.firewall_sku_name
-#   sku_tier                   = var.firewall_sku_tier
-#   pip_name                   = "${var.firewall_name}PublicIp"
-#   subnet_id                  = module.hub_vnet.subnet_ids["AzureFirewallSubnet"]
-#   log_analytics_workspace_id = module.log_analytics_workspace.id
-# }
+module "firewall" {
+  source                     = "./modules/firewall"
+  name                       = var.firewall_name
+  resource_group_name        = azurerm_resource_group.main.name
+  zones                      = var.firewall_zones
+  threat_intel_mode          = var.firewall_threat_intel_mode
+  location                   = var.location
+  sku_name                   = var.firewall_sku_name
+  sku_tier                   = var.firewall_sku_tier
+  pip_name                   = "${var.firewall_name}PublicIp"
+  subnet_id                  = module.spoke_vnet.subnet_ids["AzureFirewallSubnet"]
+  log_analytics_workspace_id = module.log_analytics_workspace.id
+}
 
 
 
-# module "routetable" {
-#   source              = "./modules/route_table"
-#   resource_group_name = azurerm_resource_group.main.name
-#   location            = var.location
-#   route_table_name    = local.route_table_name
-#   route_name          = local.route_name
-#   firewall_private_ip = module.firewall.private_ip_address
-#   subnets_to_associate = {
-#     (var.default_node_pool_subnet_name) = {
-#       subscription_id      = data.azurerm_client_config.current.subscription_id
-#       resource_group_name  = azurerm_resource_group.main.name
-#       virtual_network_name = module.hub_vnet.name
-#     }
-#     (var.additional_node_pool_subnet_name) = {
-#       subscription_id      = data.azurerm_client_config.current.subscription_id
-#       resource_group_name  = azurerm_resource_group.main.name
-#       virtual_network_name = module.hub_vnet.name
-#     }
-#   }
-# }
+module "routetable" {
+  source              = "./modules/route_table"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  route_table_name    = local.route_table_name
+  route_name          = local.route_name
+  firewall_private_ip = module.firewall.private_ip_address
+  subnets_to_associate = {
+    (var.default_node_pool_subnet_name) = {
+      subscription_id      = data.azurerm_client_config.current.subscription_id
+      resource_group_name  = azurerm_resource_group.main.name
+      virtual_network_name = module.hub_vnet.name
+    }
+    (var.additional_node_pool_subnet_name) = {
+      subscription_id      = data.azurerm_client_config.current.subscription_id
+      resource_group_name  = azurerm_resource_group.main.name
+      virtual_network_name = module.hub_vnet.name
+    }
+  }
+}
 
 # ------------------------------------------------------------------------------------------------------
 # Secrets Management: Key Vault for storing sensitive information
 # ------------------------------------------------------------------------------------------------------
 
-resource "tls_private_key" "ssh_key_pair" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
-# ------------------------------------------------------------------------------------------------------
-
-# Deploy key vault
-
-# ------------------------------------------------------------------------------------------------------
 
 module "key_vault" {
 
@@ -271,3 +261,9 @@ resource "azurerm_key_vault_secret" "ssh_private_key" {
   key_vault_id = module.key_vault.id
   depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
 }
+
+resource "tls_private_key" "ssh_key_pair" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
