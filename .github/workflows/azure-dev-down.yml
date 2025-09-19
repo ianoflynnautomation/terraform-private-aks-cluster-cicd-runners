@@ -41,6 +41,11 @@ jobs:
             --tenant-id "$Env:AZURE_TENANT_ID"
         shell: pwsh
 
+      - name: Initialize Terraform
+        run: |
+          terraform init -reconfigure
+        shell: bash
+
       - name: Provision Infrastructure
         run: azd down --no-prompt
         

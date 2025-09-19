@@ -1,8 +1,8 @@
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
 
 permissions:
   id-token: write
@@ -47,6 +47,6 @@ jobs:
       - name: Provision Infrastructure
         run: azd provision --no-prompt
 
-      - name: Deploy Application
-        run: azd deploy --no-prompt
+      # - name: Deploy Application
+      #   run: azd deploy --no-prompt
         
