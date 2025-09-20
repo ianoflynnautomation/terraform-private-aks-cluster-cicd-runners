@@ -1,6 +1,6 @@
 ### Private AKS on Azure with Terraform managed by azd
 
-This project deploys a secure, private Azure Kubernetes Service (AKS) cluster using Terraform, orchestrated end-to-end by the Azure Developer CLI (azd). It includes hub/spoke networking, a Log Analytics workspace, Azure Key Vault, and a private AKS control plane with user-defined routing.
+This project deploys a secure, private Azure Kubernetes Service (AKS) cluster using Terraform, orchestrated end-to-end by the Azure Developer CLI (azd). The cluster is specifically designed to host CI/CD runners (GitHub Actions ARC runners and GitLab runners) with a dedicated node pool for runner workloads. It includes hub/spoke networking, a Log Analytics workspace, Azure Key Vault, and a private AKS control plane with user-defined routing.
 
 ---
 
@@ -27,6 +27,8 @@ This project deploys a secure, private Azure Kubernetes Service (AKS) cluster us
   - `main.tf`: Top-level modules and resources.
   - `variables.tf`: Inputs with sensible defaults (location, AKS sizing, networking, features).
   - `modules/*`: Reusable Terraform modules for AKS, VNet, node pools, LA workspace, Key Vault, etc.
+- `github-arc-runner/`: Helm chart for GitHub Actions ARC runners with node selector and tolerations for the dedicated runner node pool.
+- `gitlab-runner/`: Helm chart for GitLab runners with node selector and tolerations for the dedicated runner node pool.
 - `.github/workflows/`
   - `azure-dev.yml`: Provisions on push to `main` (and manual dispatch) using azd + OIDC.
   - `azure-dev-down.yml`: Destroys on manual dispatch using azd.
@@ -93,7 +95,44 @@ az aks get-credentials --resource-group <your-rg-name> --name <your-aks-name> --
 kubectl get nodes
 ```
 
-The cluster’s private FQDN and other outputs are available from Terraform outputs in `infra/modules/aks/outputs.tf` (e.g., `private_fqdn`).
+The cluster's private FQDN and other outputs are available from Terraform outputs in `infra/modules/aks/outputs.tf` (e.g., `private_fqdn`).
+
+---
+
+### Deploying CI/CD Runners
+
+After the AKS cluster is provisioned, you can deploy the runner Helm charts to the dedicated node pool:
+
+#### GitHub Actions ARC Runners
+
+```bash
+# Update values in github-arc-runner/values.yaml
+# - Set your organization and repository
+# - Adjust autoscaling settings and resource limits
+
+# Deploy the chart
+helm install github-arc-runner ./github-arc-runner \
+  --namespace actions-runner-system \
+  --create-namespace
+```
+
+#### GitLab Runners
+
+```bash
+# Update values in gitlab-runner/values.yml
+# - Set your GitLab URL
+# - Configure registration token via secret
+
+# Deploy the chart
+helm install gitlab-runner ./gitlab-runner \
+  --namespace gitlab-runner \
+  --create-namespace
+```
+
+Both charts are pre-configured to:
+- Schedule pods only on the dedicated runner node pool (`workload=ci-cd-runners`)
+- Tolerate the node taint (`ci-cd-runners=true:NoSchedule`)
+- Use appropriate resource requests and limits for CI/CD workloads
 
 ---
 
@@ -103,6 +142,8 @@ The cluster’s private FQDN and other outputs are available from Terraform outp
 - Log Analytics integration with diagnostic categories enabled (API server, audit, scheduler, controller manager, autoscaler, defender/guard).
 - Optional features toggled via variables: Azure Policy, Workload Identity and OIDC, KEDA, VPA, OSM, Image Cleaner.
 - Separate user/system node pools; additional node pool module included.
+- **Dedicated CI/CD runner node pool**: The additional node pool is configured with node labels and taints (`workload=ci-cd-runners`, `ci-cd-runners=true:NoSchedule`) to isolate runner workloads from system pods.
+- **Runner Helm charts**: Pre-configured charts for both GitHub Actions ARC runners and GitLab runners that automatically schedule to the dedicated runner node pool.
 
 ---
 
