@@ -1,0 +1,7 @@
+Your GitLab Runner has been deployed!
+
+You can check the status of the runner pod by running:
+  kubectl get pods -n gitlab-runner
+
+The runner should now appear as active in your GitLab project or group's
+CI/CD settings page.

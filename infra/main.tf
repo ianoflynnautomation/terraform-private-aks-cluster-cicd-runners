@@ -61,7 +61,14 @@ module "hub_vnet" {
       default_outbound_access_enabled : true
       delegation = null
       private_endpoint_network_policies : "Enabled"
-
+    },
+    {
+      name : var.runner_node_pool_subnet_name
+      address_prefixes : var.runner_node_pool_subnet_address_prefix
+      private_link_service_network_policies_enabled : false
+      default_outbound_access_enabled : true
+      delegation = null
+      private_endpoint_network_policies : "Enabled"
     }
   ]
 }
@@ -153,35 +160,69 @@ module "aks_cluster" {
   depends_on = [module.routetable]
 }
 
-module "node_pool" {
+# module "node_pool" {
+#   source                 = "./modules/node_pool"
+#   resource_group_name    = azurerm_resource_group.main.name
+#   kubernetes_cluster_id  = module.aks_cluster.id
+#   name                   = var.additional_node_pool_name
+#   vm_size                = var.additional_node_pool_vm_size
+#   mode                   = var.additional_node_pool_mode
+#   node_labels            = var.additional_node_pool_node_labels
+#   node_taints            = var.additional_node_pool_node_taints
+#   availability_zones     = var.additional_node_pool_availability_zones
+#   vnet_subnet_id         = module.hub_vnet.subnet_ids[var.additional_node_pool_subnet_name]
+#   enable_auto_scaling    = var.additional_node_pool_enable_auto_scaling
+#   enable_host_encryption = var.additional_node_pool_enable_host_encryption
+#   enable_node_public_ip  = var.additional_node_pool_enable_node_public_ip
+#   orchestrator_version   = var.kubernetes_version
+#   max_pods               = var.additional_node_pool_max_pods
+#   max_count              = var.additional_node_pool_max_count
+#   min_count              = var.additional_node_pool_min_count
+#   node_count             = var.additional_node_pool_node_count
+#   os_type                = var.additional_node_pool_os_type
+#   priority               = var.additional_node_pool_priority
+#   tags                   = local.tags
+
+#   depends_on = [module.routetable]
+# }
+
+
+module "ci_cd_runners_node_pool" {
   source                 = "./modules/node_pool"
   resource_group_name    = azurerm_resource_group.main.name
   kubernetes_cluster_id  = module.aks_cluster.id
-  name                   = var.additional_node_pool_name
-  vm_size                = var.additional_node_pool_vm_size
-  mode                   = var.additional_node_pool_mode
-  node_labels            = var.additional_node_pool_node_labels
-  node_taints            = var.additional_node_pool_node_taints
-  availability_zones     = var.additional_node_pool_availability_zones
-  vnet_subnet_id         = module.hub_vnet.subnet_ids[var.additional_node_pool_subnet_name]
-  enable_auto_scaling    = var.additional_node_pool_enable_auto_scaling
-  enable_host_encryption = var.additional_node_pool_enable_host_encryption
-  enable_node_public_ip  = var.additional_node_pool_enable_node_public_ip
+  name                   = var.runner_node_pool_name
+  vm_size                = var.runner_node_pool_vm_size
+  mode                   = var.runner_node_pool_mode
+  node_labels            = var.runner_node_pool_node_labels
+  node_taints            = var.runner_node_pool_node_taints
+  enable_auto_scaling    = var.runner_node_pool_enable_auto_scaling
+  min_count              = var.runner_node_pool_min_count
+  max_count              = var.runner_node_pool_max_count
+  node_count             = var.runner_node_pool_node_count
+  priority               = var.runner_node_pool_priority
+  eviction_policy        = var.runner_node_pool_eviction_policy
+  spot_max_price         = var.runner_node_pool_spot_max_price
+  availability_zones     = var.runner_node_pool_availability_zones
+  vnet_subnet_id         = module.hub_vnet.subnet_ids[var.runner_node_pool_subnet_name]
+  enable_host_encryption = var.runner_node_pool_enable_host_encryption
+  enable_node_public_ip  = var.runner_node_pool_enable_node_public_ip
   orchestrator_version   = var.kubernetes_version
-  max_pods               = var.additional_node_pool_max_pods
-  max_count              = var.additional_node_pool_max_count
-  min_count              = var.additional_node_pool_min_count
-  node_count             = var.additional_node_pool_node_count
-  os_type                = var.additional_node_pool_os_type
-  priority               = var.additional_node_pool_priority
+  max_pods               = var.runner_node_pool_max_pods
+  os_type                = var.runner_node_pool_os_type
   tags                   = local.tags
 
   depends_on = [module.routetable]
 }
 
+# ------------------------------------------------------------------------------------------------------
+# Firewall
+# ------------------------------------------------------------------------------------------------------
+
+
 module "firewall" {
   source                     = "./modules/firewall"
-  name                       = var.firewall_name
+  name                       = local.firewall_name
   resource_group_name        = azurerm_resource_group.main.name
   zones                      = var.firewall_zones
   threat_intel_mode          = var.firewall_threat_intel_mode
@@ -192,8 +233,6 @@ module "firewall" {
   subnet_id                  = module.spoke_vnet.subnet_ids["AzureFirewallSubnet"]
   log_analytics_workspace_id = module.log_analytics_workspace.id
 }
-
-
 
 module "routetable" {
   source              = "./modules/route_table"
@@ -208,7 +247,12 @@ module "routetable" {
       resource_group_name  = azurerm_resource_group.main.name
       virtual_network_name = module.hub_vnet.name
     }
-    (var.additional_node_pool_subnet_name) = {
+    # (var.additional_node_pool_subnet_name) = {
+    #   subscription_id      = data.azurerm_client_config.current.subscription_id
+    #   resource_group_name  = azurerm_resource_group.main.name
+    #   virtual_network_name = module.hub_vnet.name
+    # }
+    (var.runner_node_pool_subnet_name) = {
       subscription_id      = data.azurerm_client_config.current.subscription_id
       resource_group_name  = azurerm_resource_group.main.name
       virtual_network_name = module.hub_vnet.name

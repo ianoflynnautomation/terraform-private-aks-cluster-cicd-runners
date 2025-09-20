@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     azurerm = {
-      source = "hashicorp/azurerm"
+      source  = "hashicorp/azurerm"
       version = "4.44.0"
     }
   }
@@ -30,6 +30,8 @@ resource "azurerm_kubernetes_cluster_node_pool" "node_pool" {
   os_disk_type                 = var.os_disk_type
   os_type                      = var.os_type
   priority                     = var.priority
+  eviction_policy              = var.eviction_policy
+  spot_max_price               = var.spot_max_price
   tags                         = var.tags
 
   lifecycle {

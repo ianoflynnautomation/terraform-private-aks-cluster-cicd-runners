@@ -1,0 +1,22 @@
+
+gitlab-runner:
+  gitlabUrl: "https://gitlab.com/"
+
+  runners:
+    secret: "gitlab-runner-secret"
+
+  nodeSelector:
+    workload: "ci-cd-runners"
+  tolerations:
+    - key: "ci-cd-runners"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"

@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     azurerm = {
-      source = "hashicorp/azurerm"
+      source  = "hashicorp/azurerm"
       version = "4.44.0"
     }
   }
@@ -179,6 +179,59 @@ resource "azurerm_firewall_policy_rule_collection_group" "policy" {
       protocols {
         port = "443"
         type = "Https"
+      }
+    }
+  }
+
+  application_rule_collection {
+    name     = "AksRunnerEgressRules"
+    priority = 200
+    action   = "Allow"
+
+    rule {
+      name             = "github"
+      source_addresses = ["10.0.48.0/20"]
+      destination_fqdns = [
+        "github.com",
+        "api.github.com",
+        "*.actions.githubusercontent.com",
+        "ghcr.io"
+      ]
+      protocols {
+        type = "Https"
+        port = 443
+      }
+    }
+
+    rule {
+      name             = "gitlab"
+      source_addresses = ["10.0.48.0/20"]
+      destination_fqdns = [
+        "gitlab.com",
+        "*.gitlab.com"
+      ]
+      protocols {
+        type = "Https"
+        port = 443
+      }
+    }
+
+    rule {
+      name             = "common-dependencies"
+      source_addresses = ["10.0.48.0/20"]
+      destination_fqdns = [
+        "*.docker.io",
+        "*.docker.com",
+        "mcr.microsoft.com",
+        "registry.k8s.io",
+        "registry.npmjs.org",
+        "pypi.org",
+        "repo.maven.apache.org",
+        "*.pkg.dev"
+      ]
+      protocols {
+        type = "Https"
+        port = 443
       }
     }
   }
