@@ -27,6 +27,7 @@ locals {
   firewall_name           = "afw-${local.name_prefix}"
   route_table_name        = "rt-${local.name_prefix}"
   route_name              = "rt-to-firewall"
+  acr_name                = "acr${local.sanitized_name_prefix}"
 
 }
 

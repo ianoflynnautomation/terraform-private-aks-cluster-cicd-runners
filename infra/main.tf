@@ -46,14 +46,14 @@ module "hub_vnet" {
       delegation = null
       private_endpoint_network_policies : "Enabled"
     },
-    {
-      name : var.additional_node_pool_subnet_name
-      address_prefixes : var.additional_node_pool_subnet_address_prefix
-      private_link_service_network_policies_enabled : false
-      default_outbound_access_enabled : true
-      delegation = null
-      private_endpoint_network_policies : "Enabled"
-    },
+    # {
+    #   name : var.additional_node_pool_subnet_name
+    #   address_prefixes : var.additional_node_pool_subnet_address_prefix
+    #   private_link_service_network_policies_enabled : false
+    #   default_outbound_access_enabled : true
+    #   delegation = null
+    #   private_endpoint_network_policies : "Enabled"
+    # },
     {
       name : var.pod_subnet_name
       address_prefixes : var.pod_subnet_address_prefix
@@ -215,6 +215,45 @@ module "ci_cd_runners_node_pool" {
   depends_on = [module.routetable]
 }
 
+# resource "azurerm_user_assigned_identity" "runner_identity" {
+#   name                = "runner-identity"
+#   resource_group_name = azurerm_resource_group.main.name
+#   location            = var.location
+# }
+
+# resource "azurerm_federated_identity_credential" "runner_federated_identity" {
+#   name                = "runner-federated-identity"
+#   resource_group_name = azurerm_resource_group.main.name
+#   audience            = ["api://AzureADTokenExchange"]
+#   issuer              = module.aks_cluster.oidc_issuer_url
+#   parent_id           = azurerm_user_assigned_identity.runner_identity.id
+#   subject             = "system:serviceaccount:actions-runner-system:runner-sa"
+# }
+
+# ------------------------------------------------------------------------------------------------------
+# Container Registry
+# ------------------------------------------------------------------------------------------------------
+
+
+module "container_registry" {
+  source                     = "./modules/container_registry"
+  name                       = local.acr_name
+  resource_group_name        = azurerm_resource_group.main.name
+  location                   = var.location
+  sku                        = var.acr_sku
+  admin_enabled              = var.acr_admin_enabled
+  georeplication_locations   = var.acr_georeplication_locations
+  log_analytics_workspace_id = module.log_analytics_workspace.id
+  tags                       = local.tags
+}
+
+
+resource "azurerm_role_assignment" "acr_pull" {
+  role_definition_name = "AcrPull"
+  scope                = module.container_registry.id
+  principal_id         = module.aks_cluster.aks_identity_principal_id
+}
+
 # ------------------------------------------------------------------------------------------------------
 # Firewall
 # ------------------------------------------------------------------------------------------------------
@@ -311,3 +350,60 @@ resource "tls_private_key" "ssh_key_pair" {
   rsa_bits  = 4096
 }
 
+
+# resource "azurerm_key_vault_secret" "github_app_id" {
+#   name         = "github-app-id"
+#   value        = "<YOUR_GITHUB_APP_ID>"
+#   key_vault_id = module.key_vault.id
+#   depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
+# }
+
+# resource "azurerm_key_vault_secret" "github_app_installation_id" {
+#   name         = "github-app-installation-id"
+#   value        = "<YOUR_GITHUB_APP_INSTALLATION_ID>"
+#   key_vault_id = module.key_vault.id
+#   depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
+# }
+
+# resource "azurerm_key_vault_secret" "github_app_private_key" {
+#   name         = "github-app-private-key"
+#   value        = file("<PATH_TO_GITHUB_APP_PRIVATE_KEY>")
+#   key_vault_id = module.key_vault.id
+#   depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
+# }
+
+# ------------------------------------------------------------------------------------------------------
+# Secrets Management: Key Vault for storing sensitive information
+# ------------------------------------------------------------------------------------------------------
+
+
+module "acr_private_dns_zone" {
+  source                       = "./modules/private_dns_zone"
+  name                         = "privatelink.azurecr.io"
+  resource_group_name          = azurerm_resource_group.main.name
+  virtual_networks_to_link     = {
+    (module.spoke_vnet.name) = {
+      subscription_id = data.azurerm_client_config.current.subscription_id
+      resource_group_name = azurerm_resource_group.main.name
+    }
+    (module.hub_vnet.name) = {
+      subscription_id = data.azurerm_client_config.current.subscription_id
+      resource_group_name = azurerm_resource_group.main.name
+    }
+  }
+}
+
+
+module "acr_private_endpoint" {
+  source                         = "./modules/private_endpoint"
+  name                           = "${module.container_registry.name}PrivateEndpoint"
+  location                       = var.location
+  resource_group_name            = azurerm_resource_group.main.name
+  subnet_id                      = module.hub_vnet.subnet_ids[var.runner_node_pool_subnet_name]
+  tags                           = local.tags
+  private_connection_resource_id = module.container_registry.id
+  is_manual_connection           = false
+  subresource_name               = "registry"
+  private_dns_zone_group_name    = "AcrPrivateDnsZoneGroup"
+  private_dns_zone_group_ids     = [module.acr_private_dns_zone.id]
+}
