@@ -393,10 +393,41 @@ module "acr_private_dns_zone" {
   }
 }
 
+module "key_vault_private_dns_zone" {
+  source              = "./modules/private_dns_zone"
+  name                = "privatelink.vaultcore.azure.net"
+  resource_group_name = azurerm_resource_group.main.name
+  tags                = local.tags
+   virtual_networks_to_link     = {
+    (module.spoke_vnet.name) = {
+      subscription_id = data.azurerm_client_config.current.subscription_id
+      resource_group_name = azurerm_resource_group.main.name
+    }
+    (module.hub_vnet.name) = {
+      subscription_id = data.azurerm_client_config.current.subscription_id
+      resource_group_name = azurerm_resource_group.main.name
+    }
+  }
+}
+
+module "key_vault_private_endpoint" {
+  source                         = "./modules/private_endpoint"
+  name                           = "${title(module.key_vault.name)}PrivateEndpoint"
+  location                       = var.location
+  resource_group_name            = azurerm_resource_group.main.name
+  subnet_id                      = module.hub_vnet.subnet_ids[var.runner_node_pool_subnet_name]
+  tags                           = local.tags
+  private_connection_resource_id = module.key_vault.id
+  is_manual_connection           = false
+  subresource_name               = "vault"
+  private_dns_zone_group_name    = "KeyVaultPrivateDnsZoneGroup"
+  private_dns_zone_group_ids     = [module.key_vault_private_dns_zone.id]
+}
+
 
 module "acr_private_endpoint" {
   source                         = "./modules/private_endpoint"
-  name                           = "${module.container_registry.name}PrivateEndpoint"
+  name                           = "${title(module.container_registry.name)}PrivateEndpoint"
   location                       = var.location
   resource_group_name            = azurerm_resource_group.main.name
   subnet_id                      = module.hub_vnet.subnet_ids[var.runner_node_pool_subnet_name]
