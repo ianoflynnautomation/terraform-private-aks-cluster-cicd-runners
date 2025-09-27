@@ -14,11 +14,12 @@ locals {
     environment = var.environment
     workload    = var.workload_name
     managed-by  = "Terraform"
+    region      = var.location
   }
 
   rg_name                 = "rg-${local.name_prefix}"
-  law_name                = "law-${local.name_prefix}"
-  hub_vnet_name           = "vnet-${var.workload_name}-hub-${var.environment}-${local.location_short}"
+  law_name                = "log-${local.name_prefix}"
+  hub_vnet_name           = "vnet-${var.workload_name}-hub-${local.name_prefix}"
   spoke_vnet_name         = "vnet-${local.name_prefix}"
   aks_name                = "aks-${local.name_prefix}"
   kv_name                 = "kv-${local.name_prefix}"
@@ -27,7 +28,6 @@ locals {
   firewall_name           = "afw-${local.name_prefix}"
   route_table_name        = "rt-${local.name_prefix}"
   route_name              = "rt-to-firewall"
-  acr_name                = "acr${local.sanitized_name_prefix}"
-
+  acr_name                = "cr${local.sanitized_name_prefix}"
 }
 

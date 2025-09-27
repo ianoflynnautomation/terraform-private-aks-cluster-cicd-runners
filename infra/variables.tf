@@ -746,3 +746,13 @@ variable "acr_georeplication_locations" {
   type        = list(string)
   default     = []
 }
+
+variable "gh_flux_aks_token" {
+  description = "The security token (e.g., Personal Access Token) for accessing the source control repository. Should be sourced from a Key Vault for security."
+  type        = string
+  sensitive   = true
+  validation {
+    condition     = length(var.gh_flux_aks_token) <= 255
+    error_message = "The security token must be 255 characters or less."
+  }
+}

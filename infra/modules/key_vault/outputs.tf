@@ -7,3 +7,8 @@ output "id" {
   value = azurerm_key_vault.key_vault.id
   description = "Specifies the resource id of the key vault."
 }
+
+output "vault_uri" {
+  value = azurerm_key_vault.key_vault.vault_uri
+  description = "Specifies the resource url of the key vault."
+}

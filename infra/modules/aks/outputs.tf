@@ -19,6 +19,11 @@ output "kubelet_identity_object_id" {
   description = "Specifies the object id of the kubelet identity of the AKS cluster."
 }
 
+output "oidc_issuer_url" {
+  value       = azurerm_kubernetes_cluster.aks_cluster.oidc_issuer_url
+  description = "The OIDC issuer URL associated with the AKS cluster (requires oidc_issuer_enabled = true)."
+}
+
 output "kube_config_raw" {
   value       = azurerm_kubernetes_cluster.aks_cluster.kube_config_raw
   description = "Contains the Kubernetes config to be used by kubectl and other compatible tools."

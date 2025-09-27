@@ -215,20 +215,35 @@ module "ci_cd_runners_node_pool" {
   depends_on = [module.routetable]
 }
 
-# resource "azurerm_user_assigned_identity" "runner_identity" {
-#   name                = "runner-identity"
-#   resource_group_name = azurerm_resource_group.main.name
-#   location            = var.location
-# }
 
-# resource "azurerm_federated_identity_credential" "runner_federated_identity" {
-#   name                = "runner-federated-identity"
-#   resource_group_name = azurerm_resource_group.main.name
-#   audience            = ["api://AzureADTokenExchange"]
-#   issuer              = module.aks_cluster.oidc_issuer_url
-#   parent_id           = azurerm_user_assigned_identity.runner_identity.id
-#   subject             = "system:serviceaccount:actions-runner-system:runner-sa"
-# }
+# ------------------------------------------------------------------------------------------------------
+# Federated Identity Credential
+# Creates a trust relationship between the Kubernetes Service Account used by the controller
+# and the Azure User Assigned Identity.
+# ------------------------------------------------------------------------------------------------------
+
+resource "azurerm_user_assigned_identity" "actions_runner_controller" {
+  name                = "${local.aks_name}-arc-identity"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  tags                = local.tags
+
+}
+
+resource "azurerm_federated_identity_credential" "actions_runner_controller" {
+  name                = "${local.aks_name}-runner-controller-federated-id"
+  resource_group_name = azurerm_resource_group.main.name
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = module.aks_cluster.oidc_issuer_url
+  parent_id           = azurerm_user_assigned_identity.actions_runner_controller.id
+  
+  # IMPORTANT: This subject must match the namespace and service account name that the
+  # actions-runner-controller Helm chart will deploy.
+  # Default namespace: actions-runner-system
+  # Default service account: actions-runner-controller-manager
+  subject = "system:serviceaccount:actions-runner-system:actions-runner-controller-manager"
+}
+
 
 # ------------------------------------------------------------------------------------------------------
 # Container Registry
@@ -350,27 +365,13 @@ resource "tls_private_key" "ssh_key_pair" {
   rsa_bits  = 4096
 }
 
+resource "azurerm_key_vault_secret" "github_token" {
+  name         = "gh-flux-aks-token"
+  value        = var.gh_flux_aks_token
+  key_vault_id = module.key_vault.id
+  depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
+}
 
-# resource "azurerm_key_vault_secret" "github_app_id" {
-#   name         = "github-app-id"
-#   value        = "<YOUR_GITHUB_APP_ID>"
-#   key_vault_id = module.key_vault.id
-#   depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
-# }
-
-# resource "azurerm_key_vault_secret" "github_app_installation_id" {
-#   name         = "github-app-installation-id"
-#   value        = "<YOUR_GITHUB_APP_INSTALLATION_ID>"
-#   key_vault_id = module.key_vault.id
-#   depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
-# }
-
-# resource "azurerm_key_vault_secret" "github_app_private_key" {
-#   name         = "github-app-private-key"
-#   value        = file("<PATH_TO_GITHUB_APP_PRIVATE_KEY>")
-#   key_vault_id = module.key_vault.id
-#   depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
-# }
 
 # ------------------------------------------------------------------------------------------------------
 # Secrets Management: Key Vault for storing sensitive information

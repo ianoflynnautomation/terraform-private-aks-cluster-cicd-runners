@@ -67,14 +67,13 @@ resource "azurerm_firewall_policy_rule_collection_group" "policy" {
   priority           = 500
 
   application_rule_collection {
-    name     = "ApplicationRules"
-    priority = 500
+    name     = "AksAndOsDependencies"
+    priority = 300
     action   = "Allow"
 
     rule {
-      name             = "AllowMicrosoftFqdns"
+      name             = "AksRequired"
       source_addresses = ["*"]
-
       destination_fqdns = [
         "*.cdn.mscr.io",
         "mcr.microsoft.com",
@@ -85,149 +84,58 @@ resource "azurerm_firewall_policy_rule_collection_group" "policy" {
         "dc.services.visualstudio.com",
         "*.opinsights.azure.com",
         "*.oms.opinsights.azure.com",
-        "*.microsoftonline.com",
-        "*.monitoring.azure.com",
+        "*.monitoring.azure.com"
       ]
-
       protocols {
-        port = "80"
-        type = "Http"
-      }
-
-      protocols {
-        port = "443"
         type = "Https"
+        port = 443
       }
     }
 
     rule {
-      name             = "AllowFqdnsForOsUpdates"
+      name             = "OsAndContainerRegistries"
       source_addresses = ["*"]
-
       destination_fqdns = [
         "download.opensuse.org",
         "security.ubuntu.com",
         "ntp.ubuntu.com",
         "packages.microsoft.com",
-        "snapcraft.io"
-      ]
-
-      protocols {
-        port = "80"
-        type = "Http"
-      }
-
-      protocols {
-        port = "443"
-        type = "Https"
-      }
-    }
-
-    rule {
-      name             = "AllowImagesFqdns"
-      source_addresses = ["*"]
-
-      destination_fqdns = [
         "auth.docker.io",
         "registry-1.docker.io",
-        "production.cloudflare.docker.com"
+        "production.cloudflare.docker.com",
+        "registry.k8s.io"
       ]
-
       protocols {
-        port = "80"
-        type = "Http"
-      }
-
-      protocols {
-        port = "443"
         type = "Https"
-      }
-    }
-
-    rule {
-      name             = "AllowBing"
-      source_addresses = ["*"]
-
-      destination_fqdns = [
-        "*.bing.com"
-      ]
-
-      protocols {
-        port = "80"
-        type = "Http"
-      }
-
-      protocols {
-        port = "443"
-        type = "Https"
-      }
-    }
-
-    rule {
-      name             = "AllowGoogle"
-      source_addresses = ["*"]
-
-      destination_fqdns = [
-        "*.google.com"
-      ]
-
-      protocols {
-        port = "80"
-        type = "Http"
-      }
-
-      protocols {
-        port = "443"
-        type = "Https"
+        port = 443
       }
     }
   }
 
   application_rule_collection {
-    name     = "AksRunnerEgressRules"
+    name     = "GitHubActionsRunners"
     priority = 200
     action   = "Allow"
 
     rule {
-      name             = "github"
+      name             = "GitHubRunnersRequired"
       source_addresses = ["10.0.48.0/20"]
+
       destination_fqdns = [
         "github.com",
         "api.github.com",
+        "codeload.github.com",
+        "pkg.actions.githubusercontent.com",
         "*.actions.githubusercontent.com",
-        "ghcr.io"
-      ]
-      protocols {
-        type = "Https"
-        port = 443
-      }
-    }
-
-    rule {
-      name             = "gitlab"
-      source_addresses = ["10.0.48.0/20"]
-      destination_fqdns = [
-        "gitlab.com",
-        "*.gitlab.com"
-      ]
-      protocols {
-        type = "Https"
-        port = 443
-      }
-    }
-
-    rule {
-      name             = "common-dependencies"
-      source_addresses = ["10.0.48.0/20"]
-      destination_fqdns = [
-        "*.docker.io",
-        "*.docker.com",
-        "mcr.microsoft.com",
-        "registry.k8s.io",
-        "registry.npmjs.org",
-        "pypi.org",
-        "repo.maven.apache.org",
-        "*.pkg.dev"
+        "results-receiver.actions.githubusercontent.com",
+        "*.blob.core.windows.net",
+        "objects.githubusercontent.com",
+        "objects-origin.githubusercontent.com",
+        "github-releases.githubusercontent.com",
+        "github-registry-files.githubusercontent.com",
+        "ghcr.io",
+        "*.pkg.github.com",
+        "pkg-containers.githubusercontent.com"
       ]
       protocols {
         type = "Https"
@@ -242,40 +150,13 @@ resource "azurerm_firewall_policy_rule_collection_group" "policy" {
     action   = "Allow"
 
     rule {
-      name                  = "Time"
+      name                  = "TimeAndDns"
       source_addresses      = ["*"]
-      destination_ports     = ["123"]
+      destination_ports     = ["123", "53"]
       destination_addresses = ["*"]
       protocols             = ["UDP"]
     }
 
-    rule {
-      name                  = "DNS"
-      source_addresses      = ["*"]
-      destination_ports     = ["53"]
-      destination_addresses = ["*"]
-      protocols             = ["UDP"]
-    }
-
-    rule {
-      name              = "ServiceTags"
-      source_addresses  = ["*"]
-      destination_ports = ["*"]
-      destination_addresses = [
-        "AzureContainerRegistry",
-        "MicrosoftContainerRegistry",
-        "AzureActiveDirectory"
-      ]
-      protocols = ["Any"]
-    }
-
-    rule {
-      name                  = "Internet"
-      source_addresses      = ["*"]
-      destination_ports     = ["*"]
-      destination_addresses = ["*"]
-      protocols             = ["TCP"]
-    }
   }
 
   lifecycle {
