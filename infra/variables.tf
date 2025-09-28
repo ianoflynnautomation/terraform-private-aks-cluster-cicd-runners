@@ -756,3 +756,75 @@ variable "gh_flux_aks_token" {
     error_message = "The security token must be 255 characters or less."
   }
 }
+
+variable "vm_subnet_address_prefix" {
+  description = "Specifies the address prefix of the jumbox subnet"
+  default     = ["10.0.16.0/20"]
+  type        = list(string)
+}
+
+variable "bastion_host_name" {
+  description = "(Optional) Specifies the name of the bastion host"
+  default     = "BaboBastionHost"
+  type        = string
+}
+
+variable "vm_size" {
+  description = "Specifies the size of the self-hosted agent virtual machine"
+  default     = "Standard_DS1_v2"
+  type        = string
+}
+variable "vm_public_ip" {
+  description = "(Optional) Specifies whether create a public IP for the virtual machine"
+  type        = bool
+  default     = false
+}
+
+variable "vm_os_disk_image" {
+  type        = map(string)
+  description = "Specifies the os disk image of the virtual machine"
+  default = {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
+    version   = "latest"
+    # publisher = "Canonical"
+    # offer     = "0001-com-ubuntu-server-jammy"
+    # sku       = "22_04-lts-gen2" 
+    # version   = "latest"
+  }
+}
+variable "vm_os_disk_storage_account_type" {
+  description = "Specifies the storage account type of the os disk of the self-hosted agent virtual machine"
+  default     = "Premium_LRS"
+  type        = string
+
+  validation {
+    condition     = contains(["Premium_LRS", "Premium_ZRS", "StandardSSD_LRS", "StandardSSD_ZRS", "Standard_LRS"], var.vm_os_disk_storage_account_type)
+    error_message = "The storage account type of the OS disk is invalid."
+  }
+}
+
+variable "script_name" {
+  description = "(Required) Specifies the name of the custom script."
+  type        = string
+  default     = "configure-self-hosted-agent.sh"
+}
+
+variable "cost_center" {
+  description = "The cost center responsible for this deployment."
+  type        = string
+  default = "InfraTeam-12345"
+}
+
+variable "owner" {
+  description = "The name or email of the person/team responsible for this deployment."
+  type        = string
+  default = "team@example.com"
+}
+
+variable "pe_subnet_address_prefix" {
+  description = "Specifies the address prefix of the private endpoints"
+  default     = ["10.0.64.0/27"]
+  type        = list(string)
+}
