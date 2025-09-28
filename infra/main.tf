@@ -133,17 +133,19 @@ module "vnet_peering" {
 }
 
 module "firewall" {
-  source                     = "./modules/firewall"
-  name                       = local.firewall_name
-  resource_group_name        = azurerm_resource_group.main.name
-  zones                      = var.firewall_zones
-  threat_intel_mode          = var.firewall_threat_intel_mode
-  location                   = var.location
-  sku_name                   = var.firewall_sku_name
-  sku_tier                   = var.firewall_sku_tier
-  pip_name                   = "${var.firewall_name}PublicIp"
-  subnet_id                  = module.spoke_vnet.subnet_ids["AzureFirewallSubnet"]
-  log_analytics_workspace_id = module.log_analytics_workspace.id
+  source                      = "./modules/firewall"
+  name                        = local.firewall_name
+  resource_group_name         = azurerm_resource_group.main.name
+  zones                       = var.firewall_zones
+  threat_intel_mode           = var.firewall_threat_intel_mode
+  location                    = var.location
+  sku_name                    = var.firewall_sku_name
+  sku_tier                    = var.firewall_sku_tier
+  pip_name                    = "${var.firewall_name}PublicIp"
+  subnet_id                   = module.spoke_vnet.subnet_ids["AzureFirewallSubnet"]
+  aks_node_subnet_prefixes    = var.firewall_aks_node_subnet_prefixes
+  runner_node_subnet_prefixes = var.runner_node_pool_subnet_address_prefix
+  log_analytics_workspace_id  = module.log_analytics_workspace.id
 }
 
 module "routetable" {
@@ -339,10 +341,10 @@ module "ci_cd_runners_node_pool" {
   depends_on = [module.routetable]
 }
 
-resource "azurerm_role_assignment" "acr_pull" {
-  role_definition_name = "AcrPull"
+resource "azurerm_role_assignment" "runner_identity_acr_pull" {
   scope                = module.container_registry.id
-  principal_id         = module.aks_cluster.aks_identity_principal_id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_user_assigned_identity.actions_runner_controller.principal_id
 }
 
 resource "azurerm_federated_identity_credential" "actions_runner_controller" {
@@ -425,6 +427,12 @@ module "virtual_machine" {
   network_security_group_id           = module.vm_nsg.id
   custom_data                         = base64encode(file("./modules/virtual_machine/setup/cloud-init.yaml"))
   depends_on                          = [module.storage_account, module.hub_vnet, module.log_analytics_workspace, module.vm_nsg]
+}
+
+resource "azurerm_role_assignment" "jumpbox_vm_aks_access" {
+  scope                = module.aks_cluster.id
+  role_definition_name = "Azure Kubernetes Service Cluster User Role"
+  principal_id         = module.virtual_machine.identity_principal_id
 }
 
 #--------------------------------------------------------------------------

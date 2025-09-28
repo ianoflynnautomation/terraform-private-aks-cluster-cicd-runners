@@ -87,7 +87,7 @@ variable "os_disk_type" {
 variable "os_type" {
   description = "(Optional) The Operating System which should be used for this Node Pool. Changing this forces a new resource to be created. Possible values are Linux and Windows. Defaults to Linux."
   type        = string
-  default     = "Linux"
+  default     = "AzureLinux"
 }
 
 variable "priority" {

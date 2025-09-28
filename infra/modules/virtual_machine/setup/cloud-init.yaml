@@ -12,27 +12,26 @@ packages:
   - unzip
 
 runcmd:
-  # Install Azure CLI
   - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
-
-  # Install kubectl
   - curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
   - echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list
   - apt-get update
   - apt-get install -y kubectl
-
-  # Install kubelogin
   - KUBELOGIN_VERSION="v0.1.0"
   - curl -sL "https://github.com/Azure/kubelogin/releases/download/${KUBELOGIN_VERSION}/kubelogin-linux-amd64.zip" -o kubelogin.zip
   - unzip kubelogin.zip
   - mv ./bin/linux_amd64/kubelogin /usr/local/bin/
   - rm -rf kubelogin.zip bin
-
-  # Install Flux CLI
   - curl -s https://fluxcd.io/install.sh | bash
+  - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && chmod 700 get_helm.sh && ./get_helm.sh && rm -f get_helm.sh
 
-  # Install Helm
-  - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-  - chmod 700 get_helm.sh
-  - ./get_helm.sh
-  - rm -f get_helm.sh
+  - echo "Logging into Azure using the VM's Managed Identity..."
+  - az login --identity
+  
+  - echo "Fetching AKS credentials..."
+  - az aks get-credentials --resource-group "${aks_resource_group}" --name "${aks_cluster_name}" --overwrite-existing
+  
+  - echo "Configuring kubeconfig for the admin user..."
+  - mkdir -p /home/${admin_username}/.kube
+  - cp /root/.kube/config /home/${admin_username}/.kube/config
+  - chown -R ${admin_username}:${admin_username} /home/${admin_username}/.kube

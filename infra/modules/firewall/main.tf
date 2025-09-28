@@ -40,13 +40,6 @@ resource "azurerm_firewall" "firewall" {
     subnet_id            = var.subnet_id
     public_ip_address_id = azurerm_public_ip.pip.id
   }
-
-  lifecycle {
-    ignore_changes = [
-      tags,
-
-    ]
-  }
 }
 
 resource "azurerm_firewall_policy" "policy" {
@@ -54,11 +47,11 @@ resource "azurerm_firewall_policy" "policy" {
   resource_group_name = var.resource_group_name
   location            = var.location
 
-  lifecycle {
-    ignore_changes = [
-      tags
-    ]
+  dns {
+    proxy_enabled = true
   }
+
+  threat_intelligence_mode = "Deny"
 }
 
 resource "azurerm_firewall_policy_rule_collection_group" "policy" {
@@ -73,7 +66,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "policy" {
 
     rule {
       name             = "AksRequired"
-      source_addresses = ["*"]
+      source_addresses = var.aks_node_subnet_prefixes
       destination_fqdns = [
         "*.cdn.mscr.io",
         "mcr.microsoft.com",
@@ -94,7 +87,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "policy" {
 
     rule {
       name             = "OsAndContainerRegistries"
-      source_addresses = ["*"]
+      source_addresses = var.aks_node_subnet_prefixes
       destination_fqdns = [
         "download.opensuse.org",
         "security.ubuntu.com",
@@ -119,7 +112,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "policy" {
 
     rule {
       name             = "GitHubRunnersRequired"
-      source_addresses = ["10.0.48.0/20"]
+      source_addresses = var.runner_node_subnet_prefixes
 
       destination_fqdns = [
         "github.com",
@@ -151,20 +144,12 @@ resource "azurerm_firewall_policy_rule_collection_group" "policy" {
 
     rule {
       name                  = "TimeAndDns"
-      source_addresses      = ["*"]
+      source_addresses      = var.aks_node_subnet_prefixes
       destination_ports     = ["123", "53"]
       destination_addresses = ["*"]
       protocols             = ["UDP"]
     }
 
-  }
-
-  lifecycle {
-    ignore_changes = [
-      application_rule_collection,
-      network_rule_collection,
-      nat_rule_collection
-    ]
   }
 }
 

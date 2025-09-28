@@ -266,7 +266,7 @@ variable "default_node_pool_enable_auto_scaling" {
 variable "default_node_pool_enable_host_encryption" {
   description = "(Optional) Should the nodes in this Node Pool have host encryption enabled? Defaults to false."
   type        = bool
-  default     = false
+  default     = false #true
 }
 
 variable "default_node_pool_enable_node_public_ip" {
@@ -473,7 +473,7 @@ variable "additional_node_pool_enable_auto_scaling" {
 variable "additional_node_pool_enable_host_encryption" {
   description = "(Optional) Should the nodes in this Node Pool have host encryption enabled? Defaults to false."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "additional_node_pool_enable_node_public_ip" {
@@ -548,6 +548,7 @@ variable "hub_firewall_subnet_address_prefix" {
   type        = list(string)
 }
 
+
 variable "hub_bastion_subnet_address_prefix" {
   description = "Specifies the address prefix of the firewall subnet"
   default     = ["10.1.1.0/24"]
@@ -580,6 +581,12 @@ variable "firewall_sku_tier" {
     condition     = contains(["Premium", "Standard", "Basic"], var.firewall_sku_tier)
     error_message = "The value of the sku tier property of the firewall is invalid."
   }
+}
+
+variable "firewall_aks_node_subnet_prefixes" {
+  description = "A list of CIDR blocks for the AKS node subnets that require egress."
+  type        = list(string)
+  default     = ["10.0.0.0/20", "10.0.48.0/20"]
 }
 
 variable "firewall_threat_intel_mode" {

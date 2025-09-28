@@ -72,3 +72,14 @@ variable "log_analytics_workspace_id" {
   description = "Specifies the log analytics workspace id"
   type        = string
 }
+
+
+variable "aks_node_subnet_prefixes" {
+  description = "A list of CIDR blocks for the AKS node subnets that require egress."
+  type        = list(string)
+}
+
+variable "runner_node_subnet_prefixes" {
+  description = "A list of CIDR blocks for the GitHub runner node subnets that require egress."
+  type        = list(string)
+}
