@@ -255,3 +255,4 @@ resource "azurerm_monitor_data_collection_rule_association" "dcr_association" {
 #   data_collection_endpoint_id = azurerm_monitor_data_collection_endpoint.dce.id
 #   description                 = "Association between the Data Collection Endpoint and the Linux VM."
 # }
+ 

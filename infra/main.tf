@@ -27,7 +27,7 @@ module "storage_account" {
   account_kind        = var.storage_account_kind
   account_tier        = var.storage_account_tier
   replication_type    = var.storage_account_replication_type
-  default_action      = "Allow"
+  default_action      = "Deny"
   container_name      = local.vm_scripts_container_name
   tags                = local.tags
 }
@@ -386,7 +386,7 @@ module "vm_nsg" {
       protocol                   = "Tcp"
       source_port_range          = "*"
       destination_port_range     = "22"
-      source_address_prefix      = "10.1.1.0/24" #bastion
+      source_address_prefix      = module.spoke_vnet.subnet_address_prefixes["AzureBastionSubnet"][0]
       destination_address_prefix = "*"
     },
     {
@@ -426,7 +426,6 @@ module "virtual_machine" {
   tags                                = local.tags
   network_security_group_id           = module.vm_nsg.id
   custom_data                         = base64encode(file("./modules/virtual_machine/setup/cloud-init.yaml"))
-  depends_on                          = [module.storage_account, module.hub_vnet, module.log_analytics_workspace, module.vm_nsg]
 }
 
 resource "azurerm_role_assignment" "jumpbox_vm_aks_access" {
