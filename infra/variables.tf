@@ -262,7 +262,7 @@ variable "key_vault_enable_rbac_authorization" {
 variable "key_vault_purge_protection_enabled" {
   description = "(Optional) Whether purge protection is enabled for the Key Vault. Defaults to true."
   type        = bool
-  default     = true
+  default     = false # changes to false for testing
 }
 
 variable "key_vault_soft_delete_retention_days" {

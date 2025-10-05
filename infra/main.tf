@@ -428,9 +428,15 @@ module "virtual_machine" {
   custom_data                         = base64encode(file("./modules/virtual_machine/setup/cloud-init.yaml"))
 }
 
+# resource "azurerm_role_assignment" "jumpbox_vm_aks_access" {
+#   scope                = module.aks_cluster.id
+#   role_definition_name = "Azure Kubernetes Service Cluster User Role"
+#   principal_id         = module.virtual_machine.identity_principal_id
+# }
+
 resource "azurerm_role_assignment" "jumpbox_vm_aks_access" {
   scope                = module.aks_cluster.id
-  role_definition_name = "Azure Kubernetes Service Cluster User Role"
+  role_definition_name = "Azure Kubernetes Service Contributor Role" 
   principal_id         = module.virtual_machine.identity_principal_id
 }
 
