@@ -98,12 +98,6 @@ resource "azurerm_linux_virtual_machine" "vm-linux" {
   depends_on = [azurerm_network_interface.nic]
 }
 
-# resource "azurerm_monitor_data_collection_endpoint" "dce" {
-#   name                = "${var.name}-dce"
-#   resource_group_name = var.resource_group_name
-#   location            = var.location
-#   kind                = "Linux"
-# }
 
 resource "azurerm_virtual_machine_extension" "monitor_agent" {
   name                       = "${var.name}AzureMonitorAgent"
@@ -248,11 +242,3 @@ resource "azurerm_monitor_data_collection_rule_association" "dcr_association" {
   data_collection_rule_id = azurerm_monitor_data_collection_rule.dcr.id
   description             = "Association between the Data Collection Rule and the Linux VM."
 }
-
-# resource "azurerm_monitor_data_collection_rule_association" "vm_endpoint" {
-#   name                        = "configurationAccessEndpoint"
-#   target_resource_id          = azurerm_linux_virtual_machine.vm-linux.id
-#   data_collection_endpoint_id = azurerm_monitor_data_collection_endpoint.dce.id
-#   description                 = "Association between the Data Collection Endpoint and the Linux VM."
-# }
- 

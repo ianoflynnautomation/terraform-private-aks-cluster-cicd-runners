@@ -39,6 +39,36 @@ module "storage_account" {
 module "hub_vnet" {
   source                     = "./modules/virtual_network"
   name                       = local.hub_vnet_name
+  address_space              = var.hub_vnet_address_space
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.main.name
+  log_analytics_workspace_id = module.log_analytics_workspace.id
+  tags                       = local.tags
+
+  subnets = [
+    {
+      name                                          = "AzureFirewallSubnet"
+      address_prefixes                              = var.hub_firewall_subnet_address_prefix
+      private_endpoint_network_policies_enabled     = true
+      private_link_service_network_policies_enabled = false
+      default_outbound_access_enabled               = true
+      delegation                                    = null
+      private_endpoint_network_policies             = "Enabled"
+      }, {
+      name                                          = "AzureBastionSubnet"
+      address_prefixes                              = var.hub_bastion_subnet_address_prefix
+      private_endpoint_network_policies_enabled     = true
+      private_link_service_network_policies_enabled = false
+      default_outbound_access_enabled               = false
+      delegation                                    = null
+      private_endpoint_network_policies             = "Disabled"
+    }
+  ]
+}
+
+module "spoke_vnet" {
+  source                     = "./modules/virtual_network"
+  name                       = local.spoke_vnet_name
   address_space              = var.vm_vnet_address_space
   location                   = var.location
   resource_group_name        = azurerm_resource_group.main.name
@@ -89,35 +119,6 @@ module "hub_vnet" {
   ]
 }
 
-module "spoke_vnet" {
-  source                     = "./modules/virtual_network"
-  name                       = local.spoke_vnet_name
-  address_space              = var.hub_vnet_address_space
-  location                   = var.location
-  resource_group_name        = azurerm_resource_group.main.name
-  log_analytics_workspace_id = module.log_analytics_workspace.id
-  tags                       = local.tags
-
-  subnets = [
-    {
-      name                                          = "AzureFirewallSubnet"
-      address_prefixes                              = var.hub_firewall_subnet_address_prefix
-      private_endpoint_network_policies_enabled     = true
-      private_link_service_network_policies_enabled = false
-      default_outbound_access_enabled               = true
-      delegation                                    = null
-      private_endpoint_network_policies             = "Enabled"
-      }, {
-      name                                          = "AzureBastionSubnet"
-      address_prefixes                              = var.hub_bastion_subnet_address_prefix
-      private_endpoint_network_policies_enabled     = true
-      private_link_service_network_policies_enabled = false
-      default_outbound_access_enabled               = false
-      delegation                                    = null
-      private_endpoint_network_policies             = "Disabled"
-    }
-  ]
-}
 
 module "vnet_peering" {
   source              = "./modules/virtual_network_peering"
@@ -142,7 +143,7 @@ module "firewall" {
   sku_name                    = var.firewall_sku_name
   sku_tier                    = var.firewall_sku_tier
   pip_name                    = "${var.firewall_name}PublicIp"
-  subnet_id                   = module.spoke_vnet.subnet_ids["AzureFirewallSubnet"]
+  subnet_id                   = module.hub_vnet.subnet_ids["AzureFirewallSubnet"]
   aks_node_subnet_prefixes    = var.firewall_aks_node_subnet_prefixes
   runner_node_subnet_prefixes = var.runner_node_pool_subnet_address_prefix
   log_analytics_workspace_id  = module.log_analytics_workspace.id
@@ -159,12 +160,12 @@ module "routetable" {
     (var.default_node_pool_subnet_name) = {
       subscription_id      = data.azurerm_client_config.current.subscription_id
       resource_group_name  = azurerm_resource_group.main.name
-      virtual_network_name = module.hub_vnet.name
+      virtual_network_name = module.spoke_vnet.name
     }
     (var.runner_node_pool_subnet_name) = {
       subscription_id      = data.azurerm_client_config.current.subscription_id
       resource_group_name  = azurerm_resource_group.main.name
-      virtual_network_name = module.hub_vnet.name
+      virtual_network_name = module.spoke_vnet.name
     }
   }
 }
@@ -279,7 +280,7 @@ module "aks_cluster" {
   sku_tier                                 = var.sku_tier
   default_node_pool_name                   = var.default_node_pool_name
   default_node_pool_vm_size                = var.default_node_pool_vm_size
-  vnet_subnet_id                           = module.hub_vnet.subnet_ids[var.default_node_pool_subnet_name]
+  vnet_subnet_id                           = module.spoke_vnet.subnet_ids[var.default_node_pool_subnet_name]
   default_node_pool_availability_zones     = var.default_node_pool_availability_zones
   default_node_pool_enable_auto_scaling    = var.default_node_pool_enable_auto_scaling
   default_node_pool_enable_host_encryption = var.default_node_pool_enable_host_encryption
@@ -330,7 +331,7 @@ module "ci_cd_runners_node_pool" {
   eviction_policy        = var.runner_node_pool_eviction_policy
   spot_max_price         = var.runner_node_pool_spot_max_price
   availability_zones     = var.runner_node_pool_availability_zones
-  vnet_subnet_id         = module.hub_vnet.subnet_ids[var.runner_node_pool_subnet_name]
+  vnet_subnet_id         = module.spoke_vnet.subnet_ids[var.runner_node_pool_subnet_name]
   enable_host_encryption = var.runner_node_pool_enable_host_encryption
   enable_node_public_ip  = var.runner_node_pool_enable_node_public_ip
   orchestrator_version   = var.kubernetes_version
@@ -365,7 +366,7 @@ module "bastion_host" {
   name                       = local.bastion_name
   location                   = var.location
   resource_group_name        = azurerm_resource_group.main.name
-  subnet_id                  = module.spoke_vnet.subnet_ids["AzureBastionSubnet"]
+  subnet_id                  = module.hub_vnet.subnet_ids["AzureBastionSubnet"]
   log_analytics_workspace_id = module.log_analytics_workspace.id
 }
 
@@ -386,11 +387,11 @@ module "vm_nsg" {
       protocol                   = "Tcp"
       source_port_range          = "*"
       destination_port_range     = "22"
-      source_address_prefix      = module.spoke_vnet.subnet_address_prefixes["AzureBastionSubnet"][0]
+      source_address_prefix      = "AzureBastion"
       destination_address_prefix = "*"
     },
     {
-      name                       = "AllowInternetOutbound"
+      name                       = "AllowVnetOutbound"
       priority                   = 200
       direction                  = "Outbound"
       access                     = "Allow"
@@ -398,9 +399,25 @@ module "vm_nsg" {
       source_port_range          = "*"
       destination_port_range     = "*"
       source_address_prefix      = "*"
-      destination_address_prefix = "Internet"
+      destination_address_prefix = "VirtualNetwork"
     }
   ]
+}
+
+data "cloudinit_config" "vm_config" {
+  gzip          = false
+  base64_encode = true
+
+  part {
+    filename     = "cloud-config.yaml"
+    content_type = "text/cloud-config"
+    content = templatefile("./modules/virtual_machine/setup/cloud-config.yaml", {
+      admin_ssh_public_key = azurerm_key_vault_secret.vm_ssh_public_key.value
+      aks_resource_group   = azurerm_resource_group.main.name
+      aks_cluster_name     = module.aks_cluster.name
+      vm_user              = var.admin_username
+    })
+  }
 }
 
 module "virtual_machine" {
@@ -408,12 +425,12 @@ module "virtual_machine" {
   name                                = local.vm_name
   size                                = var.vm_size
   location                            = var.location
-  public_ip                           = var.vm_public_ip
+  public_ip                           = false
   vm_user                             = var.admin_username
   admin_ssh_public_key                = azurerm_key_vault_secret.vm_ssh_public_key.value
   os_disk_image                       = var.vm_os_disk_image
   resource_group_name                 = azurerm_resource_group.main.name
-  subnet_id                           = module.hub_vnet.subnet_ids["VmSubnet"]
+  subnet_id                           = module.spoke_vnet.subnet_ids["VmSubnet"]
   os_disk_storage_account_type        = var.vm_os_disk_storage_account_type
   boot_diagnostics_storage_account    = module.storage_account.primary_blob_endpoint
   log_analytics_workspace_id          = module.log_analytics_workspace.id
@@ -425,20 +442,15 @@ module "virtual_machine" {
   script_name                         = var.script_name
   tags                                = local.tags
   network_security_group_id           = module.vm_nsg.id
-  custom_data                         = base64encode(file("./modules/virtual_machine/setup/cloud-init.yaml"))
+  custom_data                         = data.cloudinit_config.vm_config.rendered
 }
-
-# resource "azurerm_role_assignment" "jumpbox_vm_aks_access" {
-#   scope                = module.aks_cluster.id
-#   role_definition_name = "Azure Kubernetes Service Cluster User Role"
-#   principal_id         = module.virtual_machine.identity_principal_id
-# }
 
 resource "azurerm_role_assignment" "jumpbox_vm_aks_access" {
   scope                = module.aks_cluster.id
-  role_definition_name = "Azure Kubernetes Service Contributor Role" 
+  role_definition_name = "Azure Kubernetes Service Cluster User Role"
   principal_id         = module.virtual_machine.identity_principal_id
 }
+
 
 #--------------------------------------------------------------------------
 # Private Endpoints & DNS
@@ -501,7 +513,7 @@ module "key_vault_private_endpoint" {
   name                           = "${local.kv_name}-pe"
   location                       = var.location
   resource_group_name            = azurerm_resource_group.main.name
-  subnet_id                      = module.hub_vnet.subnet_ids["PrivateEndpointSubnet"]
+  subnet_id                      = module.spoke_vnet.subnet_ids["PrivateEndpointSubnet"]
   tags                           = local.tags
   private_connection_resource_id = module.key_vault.id
   is_manual_connection           = false
@@ -515,7 +527,7 @@ module "acr_private_endpoint" {
   name                           = "${local.acr_name}-pe"
   location                       = var.location
   resource_group_name            = azurerm_resource_group.main.name
-  subnet_id                      = module.hub_vnet.subnet_ids["PrivateEndpointSubnet"]
+  subnet_id                      = module.spoke_vnet.subnet_ids["PrivateEndpointSubnet"]
   tags                           = local.tags
   private_connection_resource_id = module.container_registry.id
   is_manual_connection           = false
@@ -529,7 +541,7 @@ module "storage_account_private_endpoint" {
   name                           = "${local.vm_storage_account_name}-pe"
   location                       = var.location
   resource_group_name            = azurerm_resource_group.main.name
-  subnet_id                      = module.hub_vnet.subnet_ids["PrivateEndpointSubnet"]
+  subnet_id                      = module.spoke_vnet.subnet_ids["PrivateEndpointSubnet"]
   tags                           = local.tags
   private_connection_resource_id = module.storage_account.id
   is_manual_connection           = false
@@ -577,6 +589,6 @@ module "pe_nsg" {
 }
 
 resource "azurerm_subnet_network_security_group_association" "pe_nsg_assoc" {
-  subnet_id                 = module.hub_vnet.subnet_ids["PrivateEndpointSubnet"]
+  subnet_id                 = module.spoke_vnet.subnet_ids["PrivateEndpointSubnet"]
   network_security_group_id = module.pe_nsg.id
 }
