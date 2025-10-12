@@ -33,37 +33,28 @@ packages:
 
 runcmd:
 
-  #- echo "debconf debconf/frontend select Noninteractive" | debconf-set-selections
+  - echo "debconf debconf/frontend select Noninteractive" | debconf-set-selections
 
   - echo "Configuring jumpbox for private AKS cluster access" >> /var/log/jumpbox-setup.log
   - echo "Starting at $(date)" >> /var/log/jumpbox-setup.log
 
-  # Add Microsoft repo for Azure CLI
-  - curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/microsoft.gpg 2>> /var/log/jumpbox-setup.log || echo "Failed Microsoft key" >> /var/log/jumpbox-setup.log
-  - echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/azure-cli.list
+  - curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/microsoft.gpg 2>> /var/log/jumpbox-setup.log || echo "Failed Azure CLI key" >> /var/log/jumpbox-setup.log
+  - echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/azure-cli.list
 
-  # Add Kubernetes repo
-  - curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://dl.k8s.io/apt/doc/apt-key.gpg 2>> /var/log/jumpbox-setup.log || echo "Failed K8s key" >> /var/log/jumpbox-setup.log
-  - echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-$(lsb_release -cs) main" > /etc/apt/sources.list.d/kubernetes.list
+  - mkdir -p -m 755 /etc/apt/keyrings
+  - curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg 2>> /var/log/jumpbox-setup.log || echo "Failed K8s key" >> /var/log/jumpbox-setup.log
+  - chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  - echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
+  - chmod 644 /etc/apt/sources.list.d/kubernetes.list
 
-  # Add Helm repo
-  - curl https://baltocdn.com/helm/signing.asc | gpg --dearmor > /usr/share/keyrings/helm.gpg 2>> /var/log/jumpbox-setup.log || echo "Failed Helm key" >> /var/log/jumpbox-setup.log
-  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" > /etc/apt/sources.list.d/helm-stable-debian.list
+  - curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor | tee /usr/share/keyrings/helm.gpg > /dev/null 2>> /var/log/jumpbox-setup.log || echo "Failed Helm key" >> /var/log/jumpbox-setup.log
+  - echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" | tee /etc/apt/sources.list.d/helm-stable-debian.list
 
-  # Update and install core packages
   - apt-get update -y >> /var/log/jumpbox-setup.log 2>&1 || echo "Failed to update package lists" >> /var/log/jumpbox-setup.log
   - apt-get install -y azure-cli kubectl helm >> /var/log/jumpbox-setup.log 2>&1 || echo "Failed to install core packages" >> /var/log/jumpbox-setup.log
 
-  # Install Flux CLI
   - curl -s https://fluxcd.io/install.sh | sudo bash >> /var/log/jumpbox-setup.log 2>&1 || echo "Failed to install Flux CLI" >> /var/log/jumpbox-setup.log
   - flux version >> /var/log/jumpbox-setup.log 2>&1 || echo "Flux verification failed" >> /var/log/jumpbox-setup.log
-  # - runuser -l ${vm_user} -c 'az login --identity' >> /var/log/jumpbox-setup.log 2>&1 || echo "Failed to login with managed identity" >> /var/log/jumpbox-setup.log
-  # - runuser -l ${vm_user} -c 'az aks get-credentials --resource-group ${aks_resource_group} --name ${aks_cluster_name} --overwrite-existing' >> /var/log/jumpbox-setup.log 2>&1 || echo "Failed to get AKS credentials" >> /var/log/jumpbox-setup.log
-
-  # - runuser -l ${vm_user} -c 'kubectl get nodes' >> /var/log/jumpbox-setup.log 2>&1 || echo "Failed to verify AKS connectivity" >> /var/log/jumpbox-setup.log
-
-  # - chown ${vm_user}:sudo /var/log/jumpbox-setup.log
-  # - chmod 640 /var/log/jumpbox-setup.log
 
 final_message: |
   Jumpbox setup complete. Connect via Azure Bastion and run:

@@ -1,13 +1,13 @@
 name: Test Self-Hosted Runner
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
 
 jobs:
   build:
-    # This label must match the runner configuration
     runs-on: self-hosted
 
     steps:
