@@ -387,11 +387,11 @@ module "vm_nsg" {
       protocol                   = "Tcp"
       source_port_range          = "*"
       destination_port_range     = "22"
-      source_address_prefix      = "AzureBastion"
+      source_address_prefix      = module.hub_vnet.subnet_address_prefixes["AzureBastionSubnet"][0]
       destination_address_prefix = "*"
     },
     {
-      name                       = "AllowVnetOutbound"
+      name                       = "AllowInternetOutbound"
       priority                   = 200
       direction                  = "Outbound"
       access                     = "Allow"
@@ -399,7 +399,7 @@ module "vm_nsg" {
       source_port_range          = "*"
       destination_port_range     = "*"
       source_address_prefix      = "*"
-      destination_address_prefix = "VirtualNetwork"
+      destination_address_prefix = "Internet"
     }
   ]
 }
