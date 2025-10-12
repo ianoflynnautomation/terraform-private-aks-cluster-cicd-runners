@@ -1,0 +1,7 @@
+
+keyvaultName: ""
+tenantId: ""
+oidcIssuerUrl: ""
+workloadIdentityClientId: ""
+runnerRepository: ""
+github-pat: ""

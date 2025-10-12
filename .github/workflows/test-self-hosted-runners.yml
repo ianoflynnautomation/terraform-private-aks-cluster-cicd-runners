@@ -1,0 +1,24 @@
+name: Test Self-Hosted Runner
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    # This label must match the runner configuration
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Verify Tools
+      run: |
+        echo "Running on a self-hosted runner!"
+        echo "Verifying tools..."
+        az --version
+        kubectl version --client
+        docker --version
+        echo "All tools are available."

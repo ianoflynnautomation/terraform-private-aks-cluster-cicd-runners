@@ -20,6 +20,7 @@ jobs:
       RS_RESOURCE_GROUP: ${{ vars.RS_RESOURCE_GROUP }}
       RS_STORAGE_ACCOUNT: ${{ vars.RS_STORAGE_ACCOUNT }}
       RS_CONTAINER_NAME: ${{ vars.RS_CONTAINER_NAME }}
+      # GH_FLUX_AKS_TOKEN: ${{ vars.GH_FLUX_AKS_TOKEN }}
       ARM_USE_OIDC: "true"
       TERRAFORM_VERSION: 1.13.2
       

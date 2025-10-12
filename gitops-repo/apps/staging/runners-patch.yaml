@@ -1,0 +1,8 @@
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: repo-runner
+spec:
+  template:
+    spec:
+      repository: "https://github.com/ianoflynnautomation/terraform-private-aks-cluster-cicd-runners"

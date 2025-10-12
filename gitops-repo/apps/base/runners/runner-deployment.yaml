@@ -1,0 +1,31 @@
+apiVersion: actions.github.com/v1beta1
+kind: RunnerDeployment
+metadata:
+  name: repo-runner
+  namespace: actions-runner-system
+spec:
+  replicas: 0
+  template:
+    spec:
+      repository: ""
+      image: "crmyaksdevswn002.azurecr.io/actions-runner:v1.0.0"
+      imagePullPolicy: Always
+      nodeSelector:
+        agentpool: runners
+      tolerations:
+        - key: workload
+          operator: Equal
+          value: ci-cd
+          effect: NoSchedule
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: 2
+          memory: 4Gi
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      env: []

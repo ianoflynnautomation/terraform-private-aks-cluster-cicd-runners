@@ -1,0 +1,21 @@
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: actions-runner-psp
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - configMap
+    - secret
+    - emptyDir
+  runAsUser:
+    rule: MustRunAsNonRoot
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  fsGroup:
+    rule: RunAsAny
