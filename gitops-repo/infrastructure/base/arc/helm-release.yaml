@@ -34,7 +34,7 @@ spec:
     workloadIdentity:
       enabled: true
       serviceAccountAnnotations:
-        azure.workload.identity/client-id: "" 
+        azure.workload.identity/client-id: ${workloadIdentityClientId}
     podSecurityContext:
       runAsNonRoot: true
       seccompProfile:

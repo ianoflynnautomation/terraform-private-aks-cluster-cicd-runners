@@ -14,5 +14,5 @@ kind: ImageRepository
 metadata:
   name: actions-runner-repo
 spec:
-  image: crmyaksdevswn002.azurecr.io/actions-runner:v1.0.0
+  image: ${container-registry}.azurecr.io/actions-runner:${image-version}
   interval: 10m

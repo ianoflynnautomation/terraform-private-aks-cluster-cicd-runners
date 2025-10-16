@@ -96,7 +96,9 @@ resource "azurerm_firewall_policy_rule_collection_group" "policy" {
         "auth.docker.io",
         "registry-1.docker.io",
         "production.cloudflare.docker.com",
-        "registry.k8s.io"
+        "registry.k8s.io",
+        "ghcr.io",
+        "*.ghcr.io"
       ]
       protocols {
         type = "Https"

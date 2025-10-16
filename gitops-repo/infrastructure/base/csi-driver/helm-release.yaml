@@ -35,4 +35,4 @@ spec:
         memory: 512Mi
     workloadIdentity:
       enabled: true
-      issuerUrl: ""
+      issuerUrl: ${oidcIssuerUrl}
