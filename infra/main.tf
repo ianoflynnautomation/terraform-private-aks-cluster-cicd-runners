@@ -411,12 +411,22 @@ data "cloudinit_config" "vm_config" {
   part {
     filename     = "cloud-config.yaml"
     content_type = "text/cloud-config"
-    content = templatefile("./modules/virtual_machine/setup/cloud-config.yaml", {
-      admin_ssh_public_key = azurerm_key_vault_secret.vm_ssh_public_key.value
-      aks_resource_group   = azurerm_resource_group.main.name
-      aks_cluster_name     = module.aks_cluster.name
-      vm_user              = var.admin_username
-    })
+    content      = file("${path.module}/modules/virtual_machine/setup/cloud-config.yaml")
+  }
+  part {
+    filename     = "install-tools.sh"
+    content_type = "text/x-shellscript"
+    content      = file("${path.module}/modules/virtual_machine/setup/install-tools.sh")
+  }
+  part {
+    filename     = "setup-runner.sh"
+    content_type = "text/x-shellscript"
+    content      = file("${path.module}/modules/virtual_machine/setup/setup-runner.sh")
+  }
+  part {
+    filename     = "logging.sh"
+    content_type = "text/x-shellscript"
+    content      = file("${path.module}/modules/virtual_machine/setup/logging.sh")
   }
 }
 
@@ -450,6 +460,14 @@ resource "azurerm_role_assignment" "jumpbox_vm_aks_access" {
   role_definition_name = "Azure Kubernetes Service Cluster User Role"
   principal_id         = module.virtual_machine.identity_principal_id
 }
+
+
+resource "azurerm_role_assignment" "vm_kv_secrets_user" {
+  scope                = module.key_vault.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = module.virtual_machine.identity_principal_id
+}
+
 
 
 #--------------------------------------------------------------------------

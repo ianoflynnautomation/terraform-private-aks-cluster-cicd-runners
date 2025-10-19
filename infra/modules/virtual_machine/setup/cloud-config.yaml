@@ -1,63 +1,35 @@
-#cloud-config
+locale: en_US.UTF-8
+
 package_update: true
 package_upgrade: true
 package_reboot_if_required: true
-
-# users:
-#   - name: ${vm_user}
-#     sudo: ["ALL=(ALL) NOPASSWD:/usr/bin/apt-get,/usr/bin/az,/usr/bin/kubectl,/usr/bin/helm,/bin/bash"]
-#     groups: sudo
-#     shell: /bin/bash
-#     ssh_authorized_keys:
-#       - ${admin_ssh_public_key}
-#     lock_passwd: true 
 
 packages:
   - apt-transport-https
   - ca-certificates
   - curl
+  - wget
+  - tar
   - gnupg
   - jq
-  - nano
+  - git
   - unattended-upgrades
   - ufw
+  - lsb-release
+  - software-properties-common
 
-# write_files:
-#   - path: /etc/ssh/sshd_config.d/99-custom.conf
-#     permissions: '0644'
-#     owner: root:root
-#     content: |
-#       PasswordAuthentication no
-#       PermitRootLogin no
-#       AllowUsers ${vm_user}
 
 runcmd:
-
   - echo "debconf debconf/frontend select Noninteractive" | debconf-set-selections
 
-  - echo "Configuring jumpbox for private AKS cluster access" >> /var/log/jumpbox-setup.log
-  - echo "Starting at $(date)" >> /var/log/jumpbox-setup.log
-
-  - curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/microsoft.gpg 2>> /var/log/jumpbox-setup.log || echo "Failed Azure CLI key" >> /var/log/jumpbox-setup.log
-  - echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/azure-cli.list
-
-  - mkdir -p -m 755 /etc/apt/keyrings
-  - curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg 2>> /var/log/jumpbox-setup.log || echo "Failed K8s key" >> /var/log/jumpbox-setup.log
-  - chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-  - echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
-  - chmod 644 /etc/apt/sources.list.d/kubernetes.list
-
-  - curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor | tee /usr/share/keyrings/helm.gpg > /dev/null 2>> /var/log/jumpbox-setup.log || echo "Failed Helm key" >> /var/log/jumpbox-setup.log
-  - echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" | tee /etc/apt/sources.list.d/helm-stable-debian.list
-
-  - apt-get update -y >> /var/log/jumpbox-setup.log 2>&1 || echo "Failed to update package lists" >> /var/log/jumpbox-setup.log
-  - apt-get install -y azure-cli kubectl helm >> /var/log/jumpbox-setup.log 2>&1 || echo "Failed to install core packages" >> /var/log/jumpbox-setup.log
-
-  - curl -s https://fluxcd.io/install.sh | sudo bash >> /var/log/jumpbox-setup.log 2>&1 || echo "Failed to install Flux CLI" >> /var/log/jumpbox-setup.log
-  - flux version >> /var/log/jumpbox-setup.log 2>&1 || echo "Flux verification failed" >> /var/log/jumpbox-setup.log
-
 final_message: |
-  Jumpbox setup complete. Connect via Azure Bastion and run:
-    - 'kubectl get nodes' to verify AKS connectivity
-    - 'sudo less /var/log/jumpbox-setup.log' for setup logs
-  System will reboot if required.
+  ╔════════════════════════════════════════════════════════════╗
+  ║           Jumpbox Setup Complete!                          ║
+  ╚════════════════════════════════════════════════════════════╝
+  
+  Connect via Azure Bastion and verify:
+    • jumpbox-debug             (check setup status)
+    • kubectl get nodes         (verify AKS connectivity)
+    • sudo less /var/log/cloud-init-output.log
+  
+  Cloud-init took $UPTIME seconds.
