@@ -26,8 +26,8 @@ readonly RUNNER_SCOPE="${RUNNER_SCOPE:-ianoflynnautomation/terraform-private-aks
 readonly RUNNER_NAME="${RUNNER_NAME:-$(hostname)}"
 readonly RUNNER_LABELS="${RUNNER_LABELS:-self-hosted,jumpbox,linux}"
 readonly RUNNER_GROUP="${RUNNER_GROUP:-}"
-readonly SVC_USER="${SVC_USER:-$USER}"
-readonly RUNNER_DIR="${PWD}/runner"
+readonly SVC_USER="${SVC_USER:-adminuser}"
+readonly RUNNER_DIR="/home/${SVC_USER}/runner"
 readonly GITHUB_API_URL="https://api.github.com"
 
 source "${SCRIPT_DIR}/logging.sh"
