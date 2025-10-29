@@ -1,0 +1,13 @@
+# CODEOWNERS - defines code reviewers for this repository
+# Learn more: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything
+*       @ianoflynn
+
+# Path-specific owners (customize as needed)
+/infra/                 @ianoflynn
+/jumbox/                @ianoflynn
+/gitops-repo/           @ianoflynn
+
+# GitHub meta files
+/.github/               @ianoflynn
