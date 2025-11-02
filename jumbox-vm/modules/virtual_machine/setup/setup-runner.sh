@@ -21,8 +21,8 @@ IFS=$'\n\t'
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly LOG_FILE="/var/log/jumpbox-runner-setup.log"
-readonly KEYVAULT_NAME="${KEYVAULT_NAME}"
-readonly RUNNER_SCOPE="${RUNNER_SCOPE}"
+readonly KEYVAULT_NAME="${KEYVAULT_NAME:-kv-myaks-dev-swn001test}"
+readonly RUNNER_SCOPE="${RUNNER_SCOPE:-ianoflynnautomation/terraform-private-aks-cluster-cicd-runners}"
 readonly RUNNER_NAME="${RUNNER_NAME:-$(hostname)}"
 readonly RUNNER_LABELS="${RUNNER_LABELS:-self-hosted,jumpbox,linux}"
 readonly RUNNER_GROUP="${RUNNER_GROUP:-}"
