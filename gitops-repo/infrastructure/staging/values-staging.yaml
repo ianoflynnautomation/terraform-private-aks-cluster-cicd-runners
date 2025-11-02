@@ -1,9 +1,0 @@
-
-keyvaultName: ""
-tenantId: ""
-oidcIssuerUrl: ""
-workloadIdentityClientId: ""
-runnerRepository: ""
-github-pat: ""
-image-version: ""
-container-registry: ""

@@ -1,0 +1,35 @@
+locale: en_US.UTF-8
+
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+
+packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - wget
+  - tar
+  - gnupg
+  - jq
+  - git
+  - unattended-upgrades
+  - ufw
+  - lsb-release
+  - software-properties-common
+
+
+runcmd:
+  - echo "debconf debconf/frontend select Noninteractive" | debconf-set-selections
+
+final_message: |
+  ╔════════════════════════════════════════════════════════════╗
+  ║           Jumpbox Setup Complete!                          ║
+  ╚════════════════════════════════════════════════════════════╝
+  
+  Connect via Azure Bastion and verify:
+    • jumpbox-debug             (check setup status)
+    • kubectl get nodes         (verify AKS connectivity)
+    • sudo less /var/log/cloud-init-output.log
+  
+  Cloud-init took $UPTIME seconds.

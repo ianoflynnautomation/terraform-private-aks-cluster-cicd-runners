@@ -19,19 +19,6 @@ module "log_analytics_workspace" {
   tags                = local.tags
 }
 
-module "storage_account" {
-  source              = "./modules/storage_account"
-  name                = local.vm_storage_account_name
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  account_kind        = var.storage_account_kind
-  account_tier        = var.storage_account_tier
-  replication_type    = var.storage_account_replication_type
-  default_action      = "Deny"
-  container_name      = local.vm_scripts_container_name
-  tags                = local.tags
-}
-
 #--------------------------------------------------------------------------
 # Networking
 #--------------------------------------------------------------------------
@@ -223,20 +210,6 @@ resource "azurerm_key_vault_secret" "aks_ssh_private_key" {
   depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
 }
 
-resource "azurerm_key_vault_secret" "vm_ssh_public_key" {
-  name         = "vm-ssh-public-key"
-  value        = tls_private_key.vm_ssh_key.public_key_openssh
-  key_vault_id = module.key_vault.id
-  depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
-}
-
-resource "azurerm_key_vault_secret" "vm_ssh_private_key" {
-  name         = "vm-ssh-private-key"
-  value        = tls_private_key.vm_ssh_key.private_key_pem
-  key_vault_id = module.key_vault.id
-  depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
-}
-
 resource "azurerm_key_vault_secret" "runner_token" {
   name         = "gh-flux-aks-token"
   value        = var.gh_flux_aks_token
@@ -370,106 +343,6 @@ module "bastion_host" {
   log_analytics_workspace_id = module.log_analytics_workspace.id
 }
 
-module "vm_nsg" {
-  source                     = "./modules/network_security_group"
-  name                       = local.vm_nsg_name
-  location                   = var.location
-  resource_group_name        = azurerm_resource_group.main.name
-  log_analytics_workspace_id = module.log_analytics_workspace.id
-  tags                       = local.tags
-
-  security_rules = [
-    {
-      name                       = "AllowBastionSSHInbound"
-      priority                   = 100
-      direction                  = "Inbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_range     = "22"
-      source_address_prefix      = module.hub_vnet.subnet_address_prefixes["AzureBastionSubnet"][0]
-      destination_address_prefix = "*"
-    },
-    {
-      name                       = "AllowInternetOutbound"
-      priority                   = 200
-      direction                  = "Outbound"
-      access                     = "Allow"
-      protocol                   = "*"
-      source_port_range          = "*"
-      destination_port_range     = "*"
-      source_address_prefix      = "*"
-      destination_address_prefix = "Internet"
-    }
-  ]
-}
-
-data "cloudinit_config" "vm_config" {
-  gzip          = false
-  base64_encode = true
-
-  part {
-    filename     = "cloud-config.yaml"
-    content_type = "text/cloud-config"
-    content      = file("${path.module}/modules/virtual_machine/setup/cloud-config.yaml")
-  }
-  part {
-    filename     = "install-tools.sh"
-    content_type = "text/x-shellscript"
-    content      = file("${path.module}/modules/virtual_machine/setup/install-tools.sh")
-  }
-  part {
-    filename     = "setup-runner.sh"
-    content_type = "text/x-shellscript"
-    content      = file("${path.module}/modules/virtual_machine/setup/setup-runner.sh")
-  }
-  part {
-    filename     = "logging.sh"
-    content_type = "text/x-shellscript"
-    content      = file("${path.module}/modules/virtual_machine/setup/logging.sh")
-  }
-}
-
-module "virtual_machine" {
-  source                              = "./modules/virtual_machine"
-  name                                = local.vm_name
-  size                                = var.vm_size
-  location                            = var.location
-  public_ip                           = false
-  vm_user                             = var.admin_username
-  admin_ssh_public_key                = azurerm_key_vault_secret.vm_ssh_public_key.value
-  os_disk_image                       = var.vm_os_disk_image
-  resource_group_name                 = azurerm_resource_group.main.name
-  subnet_id                           = module.spoke_vnet.subnet_ids["VmSubnet"]
-  os_disk_storage_account_type        = var.vm_os_disk_storage_account_type
-  boot_diagnostics_storage_account    = module.storage_account.primary_blob_endpoint
-  log_analytics_workspace_id          = module.log_analytics_workspace.id
-  log_analytics_workspace_key         = module.log_analytics_workspace.primary_shared_key
-  log_analytics_workspace_resource_id = module.log_analytics_workspace.id
-  script_storage_account_name         = module.storage_account.name
-  script_storage_account_key          = module.storage_account.primary_access_key
-  container_name                      = module.storage_account.scripts_container_name
-  script_name                         = var.script_name
-  tags                                = local.tags
-  network_security_group_id           = module.vm_nsg.id
-  custom_data                         = data.cloudinit_config.vm_config.rendered
-}
-
-resource "azurerm_role_assignment" "jumpbox_vm_aks_access" {
-  scope                = module.aks_cluster.id
-  role_definition_name = "Azure Kubernetes Service Cluster User Role"
-  principal_id         = module.virtual_machine.identity_principal_id
-}
-
-
-resource "azurerm_role_assignment" "vm_kv_secrets_user" {
-  scope                = module.key_vault.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = module.virtual_machine.identity_principal_id
-}
-
-
-
 #--------------------------------------------------------------------------
 # Private Endpoints & DNS
 #--------------------------------------------------------------------------
@@ -508,24 +381,6 @@ module "acr_private_dns_zone" {
   }
 }
 
-module "storage_blob_private_dns_zone" {
-  source              = "./modules/private_dns_zone"
-  name                = "privatelink.blob.core.windows.net"
-  resource_group_name = azurerm_resource_group.main.name
-  tags                = local.tags
-  virtual_networks_to_link = {
-    (module.hub_vnet.name) = {
-      subscription_id     = data.azurerm_client_config.current.subscription_id
-      resource_group_name = azurerm_resource_group.main.name
-    }
-    (module.spoke_vnet.name) = {
-      subscription_id     = data.azurerm_client_config.current.subscription_id
-      resource_group_name = azurerm_resource_group.main.name
-    }
-  }
-}
-
-
 module "key_vault_private_endpoint" {
   source                         = "./modules/private_endpoint"
   name                           = "${local.kv_name}-pe"
@@ -552,20 +407,6 @@ module "acr_private_endpoint" {
   subresource_name               = "registry"
   private_dns_zone_group_name    = "default"
   private_dns_zone_group_ids     = [module.acr_private_dns_zone.id]
-}
-
-module "storage_account_private_endpoint" {
-  source                         = "./modules/private_endpoint"
-  name                           = "${local.vm_storage_account_name}-pe"
-  location                       = var.location
-  resource_group_name            = azurerm_resource_group.main.name
-  subnet_id                      = module.spoke_vnet.subnet_ids["PrivateEndpointSubnet"]
-  tags                           = local.tags
-  private_connection_resource_id = module.storage_account.id
-  is_manual_connection           = false
-  subresource_name               = "blob"
-  private_dns_zone_group_name    = "default"
-  private_dns_zone_group_ids     = [module.storage_blob_private_dns_zone.id]
 }
 
 #--------------------------------------------------------------------------
