@@ -34,7 +34,6 @@ resource "azurerm_firewall" "firewall" {
   firewall_policy_id  = azurerm_firewall_policy.policy.id
   tags                = var.tags
 
-
   ip_configuration {
     name                 = "fw_ip_config"
     subnet_id            = var.subnet_id
@@ -43,152 +42,123 @@ resource "azurerm_firewall" "firewall" {
 }
 
 resource "azurerm_firewall_policy" "policy" {
-  name                = "${var.name}Policy"
+  name                = coalesce(var.firewall_policy_name, "${var.name}Policy")
   resource_group_name = var.resource_group_name
   location            = var.location
 
   dns {
-    proxy_enabled = true
+    proxy_enabled = var.dns_proxy_enabled
   }
 
-  threat_intelligence_mode = "Deny"
+  threat_intelligence_mode = var.threat_intelligence_mode
 }
 
-resource "azurerm_firewall_policy_rule_collection_group" "policy" {
-  name               = "AksEgressPolicyRuleCollectionGroup"
+resource "azurerm_firewall_policy_rule_collection_group" "groups" {
+  for_each = var.rule_collection_groups
+
+  name               = each.key
   firewall_policy_id = azurerm_firewall_policy.policy.id
-  priority           = 500
+  priority           = each.value.priority
 
-  application_rule_collection {
-    name     = "AksAndOsDependencies"
-    priority = 300
-    action   = "Allow"
+  dynamic "application_rule_collection" {
+    for_each = each.value.application_rule_collections
+    content {
+      name     = application_rule_collection.value.name
+      priority = application_rule_collection.value.priority
+      action   = application_rule_collection.value.action
 
-    rule {
-      name             = "AksRequired"
-      source_addresses = var.aks_node_subnet_prefixes
-      destination_fqdns = [
-        "*.cdn.mscr.io",
-        "mcr.microsoft.com",
-        "*.data.mcr.microsoft.com",
-        "management.azure.com",
-        "login.microsoftonline.com",
-        "acs-mirror.azureedge.net",
-        "dc.services.visualstudio.com",
-        "*.opinsights.azure.com",
-        "*.oms.opinsights.azure.com",
-        "*.monitoring.azure.com"
-      ]
-      protocols {
-        type = "Https"
-        port = 443
-      }
-    }
+      dynamic "rule" {
+        for_each = application_rule_collection.value.rules
+        content {
+          name              = rule.value.name
+          source_addresses  = rule.value.source_addresses
+          source_ip_groups  = rule.value.source_ip_groups
+          destination_fqdns = rule.value.destination_fqdns
 
-    rule {
-      name             = "OsAndContainerRegistries"
-      source_addresses = var.aks_node_subnet_prefixes
-      destination_fqdns = [
-        "download.opensuse.org",
-        "security.ubuntu.com",
-        "ntp.ubuntu.com",
-        "packages.microsoft.com",
-        "auth.docker.io",
-        "registry-1.docker.io",
-        "production.cloudflare.docker.com",
-        "registry.k8s.io",
-        "ghcr.io",
-        "*.ghcr.io"
-      ]
-      protocols {
-        type = "Https"
-        port = 443
+          dynamic "protocols" {
+            for_each = rule.value.protocols
+            content {
+              type = protocols.value.type
+              port = protocols.value.port
+            }
+          }
+        }
       }
     }
   }
 
-  application_rule_collection {
-    name     = "GitHubActionsRunners"
-    priority = 200
-    action   = "Allow"
+  dynamic "network_rule_collection" {
+    for_each = each.value.network_rule_collections
+    content {
+      name     = network_rule_collection.value.name
+      priority = network_rule_collection.value.priority
+      action   = network_rule_collection.value.action
 
-    rule {
-      name             = "GitHubRunnersRequired"
-      source_addresses = var.runner_node_subnet_prefixes
-
-      destination_fqdns = [
-        "github.com",
-        "api.github.com",
-        "codeload.github.com",
-        "pkg.actions.githubusercontent.com",
-        "*.actions.githubusercontent.com",
-        "results-receiver.actions.githubusercontent.com",
-        "*.blob.core.windows.net",
-        "objects.githubusercontent.com",
-        "objects-origin.githubusercontent.com",
-        "github-releases.githubusercontent.com",
-        "github-registry-files.githubusercontent.com",
-        "ghcr.io",
-        "*.pkg.github.com",
-        "pkg-containers.githubusercontent.com"
-      ]
-      protocols {
-        type = "Https"
-        port = 443
+      dynamic "rule" {
+        for_each = network_rule_collection.value.rules
+        content {
+          name                  = rule.value.name
+          source_addresses      = rule.value.source_addresses
+          source_ip_groups      = rule.value.source_ip_groups
+          destination_ports     = rule.value.destination_ports
+          destination_addresses = rule.value.destination_addresses
+          destination_fqdns     = rule.value.destination_fqdns
+          protocols             = rule.value.protocols
+        }
       }
     }
   }
 
-  network_rule_collection {
-    name     = "NetworkRules"
-    priority = 400
-    action   = "Allow"
+  dynamic "nat_rule_collection" {
+    for_each = each.value.nat_rule_collections
+    content {
+      name     = nat_rule_collection.value.name
+      priority = nat_rule_collection.value.priority
+      action   = nat_rule_collection.value.action
 
-    rule {
-      name                  = "TimeAndDns"
-      source_addresses      = var.aks_node_subnet_prefixes
-      destination_ports     = ["123", "53"]
-      destination_addresses = ["*"]
-      protocols             = ["UDP"]
+      dynamic "rule" {
+        for_each = nat_rule_collection.value.rules
+        content {
+          name                = rule.value.name
+          source_addresses    = rule.value.source_addresses
+          source_ip_groups    = rule.value.source_ip_groups
+          destination_address = rule.value.destination_address
+          destination_ports   = rule.value.destination_ports
+          translated_address  = rule.value.translated_address
+          translated_port     = rule.value.translated_port
+          protocols           = rule.value.protocols
+        }
+      }
     }
-
   }
 }
 
 resource "azurerm_monitor_diagnostic_setting" "settings" {
+  count = var.enable_diagnostic_settings ? 1 : 0
+
   name                       = "DiagnosticsSettings"
   target_resource_id         = azurerm_firewall.firewall.id
   log_analytics_workspace_id = var.log_analytics_workspace_id
 
-  enabled_log {
-    category = "AzureFirewallApplicationRule"
+  dynamic "enabled_log" {
+    for_each = var.diagnostic_log_categories
+    content {
+      category = enabled_log.value
+    }
   }
-
-  enabled_log {
-    category = "AzureFirewallNetworkRule"
-  }
-
-  enabled_log {
-    category = "AzureFirewallDnsProxy"
-  }
-
 }
 
 resource "azurerm_monitor_diagnostic_setting" "pip_settings" {
+  count = var.enable_diagnostic_settings ? 1 : 0
+
   name                       = "DiagnosticsSettings"
   target_resource_id         = azurerm_public_ip.pip.id
   log_analytics_workspace_id = var.log_analytics_workspace_id
 
-  enabled_log {
-    category = "DDoSProtectionNotifications"
+  dynamic "enabled_log" {
+    for_each = var.pip_diagnostic_log_categories
+    content {
+      category = enabled_log.value
+    }
   }
-
-  enabled_log {
-    category = "DDoSMitigationFlowLogs"
-  }
-
-  enabled_log {
-    category = "DDoSMitigationReports"
-  }
-
 }

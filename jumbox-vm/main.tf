@@ -195,24 +195,22 @@ module "virtual_machine" {
   name                                = local.vm_name
   size                                = var.vm_size
   location                            = var.location
-  public_ip                           = false
+  resource_group_name                 = azurerm_resource_group.main.name
+  subnet_id                           = module.spoke_vnet.subnet_ids["VmSubnet"]
   vm_user                             = var.admin_username
   admin_ssh_public_key                = azurerm_key_vault_secret.vm_ssh_public_key.value
   os_disk_image                       = var.vm_os_disk_image
-  resource_group_name                 = data.azurerm_resource_group.main.name
-  subnet_id                           = data.azurerm_subnet.vm.id
   os_disk_storage_account_type        = var.vm_os_disk_storage_account_type
-  boot_diagnostics_storage_account    = module.storage_account.primary_blob_endpoint
-  log_analytics_workspace_id          = data.azurerm_log_analytics_workspace.main.id
-  log_analytics_workspace_key         = data.azurerm_log_analytics_workspace.main.primary_shared_key
-  log_analytics_workspace_resource_id = data.azurerm_log_analytics_workspace.main.id
-  script_storage_account_name         = module.storage_account.name
-  script_storage_account_key          = module.storage_account.primary_access_key
-  container_name                      = module.storage_account.scripts_container_name
-  script_name                         = var.script_name
-  tags                                = local.tags
-  network_security_group_id           = module.vm_nsg.id
   custom_data                         = data.cloudinit_config.vm_config.rendered
+  public_ip                           = false
+  network_security_group_id           = module.vm_nsg.id
+  boot_diagnostics_storage_account    = module.storage_account.primary_blob_endpoint
+  log_analytics_workspace_resource_id = module.log_analytics_workspace.id
+  enable_azure_monitor_agent          = true
+  enable_dependency_agent             = true
+  enable_data_collection_rule         = true
+
+  tags = local.tags
 }
 
 resource "azurerm_role_assignment" "jumpbox_vm_aks_access" {

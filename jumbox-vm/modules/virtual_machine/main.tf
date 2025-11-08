@@ -8,18 +8,17 @@ terraform {
 }
 
 resource "azurerm_public_ip" "public_ip" {
-  name                = "${var.name}PublicIp"
+  count = var.public_ip ? 1 : 0
+
+  name                = coalesce(var.public_ip_name, "${var.name}PublicIp")
   resource_group_name = var.resource_group_name
   location            = var.location
   allocation_method   = "Dynamic"
   domain_name_label   = lower(var.name)
-  count               = var.public_ip ? 1 : 0
   tags                = var.tags
 
   lifecycle {
-    ignore_changes = [
-      tags
-    ]
+    ignore_changes = [tags]
   }
 }
 
@@ -33,13 +32,11 @@ resource "azurerm_network_interface" "nic" {
     name                          = "Configuration"
     subnet_id                     = var.subnet_id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = try(azurerm_public_ip.public_ip[0].id, null)
+    public_ip_address_id          = var.public_ip ? azurerm_public_ip.public_ip[0].id : null
   }
 
   lifecycle {
-    ignore_changes = [
-      tags
-    ]
+    ignore_changes = [tags]
   }
 }
 
@@ -48,20 +45,21 @@ resource "azurerm_network_interface_security_group_association" "nsg_association
   network_security_group_id = var.network_security_group_id
 }
 
-resource "azurerm_linux_virtual_machine" "vm-linux" {
+
+resource "azurerm_linux_virtual_machine" "vm" {
   name                            = var.name
   resource_group_name             = var.resource_group_name
   location                        = var.location
   size                            = var.size
-  computer_name                   = var.name
+  computer_name                   = coalesce(var.computer_name, var.name)
   admin_username                  = var.vm_user
   tags                            = var.tags
   disable_password_authentication = true
+  custom_data                     = var.custom_data != null ? var.custom_data : null
+
   network_interface_ids = [
     azurerm_network_interface.nic.id
   ]
-
-  custom_data = var.custom_data
 
   admin_ssh_key {
     username   = var.vm_user
@@ -70,81 +68,80 @@ resource "azurerm_linux_virtual_machine" "vm-linux" {
 
   os_disk {
     name                 = "${var.name}OsDisk"
-    caching              = "ReadWrite"
+    caching              = var.os_disk_caching
     storage_account_type = var.os_disk_storage_account_type
+    disk_size_gb         = var.os_disk_size_gb
   }
 
   source_image_reference {
-    publisher = lookup(var.os_disk_image, "publisher", null)
-    offer     = lookup(var.os_disk_image, "offer", null)
-    sku       = lookup(var.os_disk_image, "sku", null)
-    version   = lookup(var.os_disk_image, "version", null)
+    publisher = var.os_disk_image.publisher
+    offer     = var.os_disk_image.offer
+    sku       = var.os_disk_image.sku
+    version   = var.os_disk_image.version
   }
 
   boot_diagnostics {
-    storage_account_uri = var.boot_diagnostics_storage_account == "" ? null : var.boot_diagnostics_storage_account
-  }
-
-  lifecycle {
-    ignore_changes = [
-      tags
-    ]
+    storage_account_uri = var.boot_diagnostics_storage_account
   }
 
   identity {
-    type = "SystemAssigned"
+    type         = var.identity_type
+    identity_ids = var.identity_type != "SystemAssigned" ? var.identity_ids : null
   }
 
-  depends_on = [azurerm_network_interface.nic]
-}
+  lifecycle {
+    ignore_changes = [tags]
+  }
 
+  depends_on = [azurerm_network_interface_security_group_association.nsg_association]
+}
 
 resource "azurerm_virtual_machine_extension" "monitor_agent" {
+  count = var.enable_azure_monitor_agent ? 1 : 0
+
   name                       = "${var.name}AzureMonitorAgent"
-  virtual_machine_id         = azurerm_linux_virtual_machine.vm-linux.id
+  virtual_machine_id         = azurerm_linux_virtual_machine.vm.id
   publisher                  = "Microsoft.Azure.Monitor"
   type                       = "AzureMonitorLinuxAgent"
-  type_handler_version       = "1.25"
+  type_handler_version       = var.monitor_agent_version
   automatic_upgrade_enabled  = true
   auto_upgrade_minor_version = true
   tags                       = var.tags
 
   lifecycle {
-    ignore_changes = [
-      tags
-    ]
+    ignore_changes = [tags]
   }
-
-  depends_on = [azurerm_linux_virtual_machine.vm-linux]
 }
 
+
 resource "azurerm_virtual_machine_extension" "dependency_agent" {
+  count = var.enable_dependency_agent && var.enable_azure_monitor_agent ? 1 : 0
+
   name                       = "${var.name}DependencyAgent"
-  virtual_machine_id         = azurerm_linux_virtual_machine.vm-linux.id
+  virtual_machine_id         = azurerm_linux_virtual_machine.vm.id
   publisher                  = "Microsoft.Azure.Monitoring.DependencyAgent"
   type                       = "DependencyAgentLinux"
-  type_handler_version       = "9.10"
+  type_handler_version       = var.dependency_agent_version
   auto_upgrade_minor_version = true
   automatic_upgrade_enabled  = true
   tags                       = var.tags
 
-  settings = <<SETTINGS
-    {
-      "enableAMA": "true"
-    }
-  SETTINGS
+  settings = {
+    enableAMA = "true"
+  }
 
   lifecycle {
-    ignore_changes = [
-      tags
-    ]
+    ignore_changes = [tags]
   }
 
   depends_on = [azurerm_virtual_machine_extension.monitor_agent]
 }
 
+
 resource "azurerm_monitor_data_collection_rule" "dcr" {
-  name                = "MSVMI-LinuxVmMonitorDataCollectionRule"
+  count = var.enable_data_collection_rule && var.log_analytics_workspace_resource_id != null ? 1 : 0
+
+  name                = coalesce(var.data_collection_rule_name, "dcr-${var.name}")
   resource_group_name = var.resource_group_name
   location            = var.location
   kind                = "Linux"
@@ -153,13 +150,13 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
   destinations {
     log_analytics {
       workspace_resource_id = var.log_analytics_workspace_resource_id
-      name                  = "datacollectionrule"
+      name                  = "workspace"
     }
   }
 
   data_flow {
     streams      = ["Microsoft-InsightsMetrics", "Microsoft-Syslog", "Microsoft-Perf"]
-    destinations = ["datacollectionrule"]
+    destinations = ["workspace"]
   }
 
   data_sources {
@@ -228,17 +225,15 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
   }
 
   lifecycle {
-    ignore_changes = [
-      tags
-    ]
+    ignore_changes = [tags]
   }
-
-  depends_on = [azurerm_linux_virtual_machine.vm-linux]
 }
 
 resource "azurerm_monitor_data_collection_rule_association" "dcr_association" {
+  count = var.enable_data_collection_rule && var.log_analytics_workspace_resource_id != null ? 1 : 0
+
   name                    = "${var.name}-dcr-association"
-  target_resource_id      = azurerm_linux_virtual_machine.vm-linux.id
-  data_collection_rule_id = azurerm_monitor_data_collection_rule.dcr.id
-  description             = "Association between the Data Collection Rule and the Linux VM."
+  target_resource_id      = azurerm_linux_virtual_machine.vm.id
+  data_collection_rule_id = azurerm_monitor_data_collection_rule.dcr[0].id
+  description             = "Association between the Data Collection Rule and the Linux VM"
 }

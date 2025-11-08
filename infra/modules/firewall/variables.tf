@@ -66,6 +66,7 @@ variable "subnet_id" {
 variable "tags" {
   description = "(Optional) Specifies the tags of the storage account"
   default     = {}
+  type        = map(string)
 }
 
 variable "log_analytics_workspace_id" {
@@ -73,13 +74,103 @@ variable "log_analytics_workspace_id" {
   type        = string
 }
 
-
-variable "aks_node_subnet_prefixes" {
-  description = "A list of CIDR blocks for the AKS node subnets that require egress."
-  type        = list(string)
+variable "firewall_policy_name" {
+  description = "Name of the firewall policy. Defaults to '{firewall_name}Policy'"
+  type        = string
+  default     = null
 }
 
-variable "runner_node_subnet_prefixes" {
-  description = "A list of CIDR blocks for the GitHub runner node subnets that require egress."
+variable "dns_proxy_enabled" {
+  description = "Enable DNS proxy in firewall policy"
+  type        = bool
+  default     = true
+}
+
+variable "threat_intelligence_mode" {
+  description = "Threat intelligence mode for firewall policy. Possible values are: Off, Alert, Deny"
+  type        = string
+  default     = "Deny"
+
+  validation {
+    condition     = contains(["Off", "Alert", "Deny"], var.threat_intelligence_mode)
+    error_message = "The threat intelligence mode is invalid."
+  }
+}
+
+variable "rule_collection_groups" {
+  description = "Map of firewall policy rule collection groups"
+  type = map(object({
+    priority = number
+    application_rule_collections = optional(list(object({
+      name     = string
+      priority = number
+      action   = string
+      rules = list(object({
+        name              = string
+        source_addresses  = optional(list(string))
+        source_ip_groups  = optional(list(string))
+        destination_fqdns = list(string)
+        protocols = list(object({
+          type = string
+          port = number
+        }))
+      }))
+    })), [])
+    network_rule_collections = optional(list(object({
+      name     = string
+      priority = number
+      action   = string
+      rules = list(object({
+        name                  = string
+        source_addresses      = optional(list(string))
+        source_ip_groups      = optional(list(string))
+        destination_ports     = list(string)
+        destination_addresses = optional(list(string))
+        destination_fqdns     = optional(list(string))
+        protocols             = list(string)
+      }))
+    })), [])
+    nat_rule_collections = optional(list(object({
+      name     = string
+      priority = number
+      action   = string
+      rules = list(object({
+        name                = string
+        source_addresses    = optional(list(string))
+        source_ip_groups    = optional(list(string))
+        destination_address = string
+        destination_ports   = list(string)
+        translated_address  = string
+        translated_port     = string
+        protocols           = list(string)
+      }))
+    })), [])
+  }))
+  default = {}
+}
+
+variable "enable_diagnostic_settings" {
+  description = "Enable diagnostic settings for firewall and public IP"
+  type        = bool
+  default     = true
+}
+
+variable "diagnostic_log_categories" {
+  description = "List of log categories to enable for firewall diagnostics"
   type        = list(string)
+  default = [
+    "AzureFirewallApplicationRule",
+    "AzureFirewallNetworkRule",
+    "AzureFirewallDnsProxy"
+  ]
+}
+
+variable "pip_diagnostic_log_categories" {
+  description = "List of log categories to enable for public IP diagnostics"
+  type        = list(string)
+  default = [
+    "DDoSProtectionNotifications",
+    "DDoSMitigationFlowLogs",
+    "DDoSMitigationReports"
+  ]
 }

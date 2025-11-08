@@ -121,19 +121,132 @@ module "vnet_peering" {
 }
 
 module "firewall" {
-  source                      = "./modules/firewall"
-  name                        = local.firewall_name
-  resource_group_name         = azurerm_resource_group.main.name
-  zones                       = var.firewall_zones
-  threat_intel_mode           = var.firewall_threat_intel_mode
-  location                    = var.location
-  sku_name                    = var.firewall_sku_name
-  sku_tier                    = var.firewall_sku_tier
-  pip_name                    = "${var.firewall_name}PublicIp"
-  subnet_id                   = module.hub_vnet.subnet_ids["AzureFirewallSubnet"]
-  aks_node_subnet_prefixes    = var.firewall_aks_node_subnet_prefixes
-  runner_node_subnet_prefixes = var.runner_node_pool_subnet_address_prefix
-  log_analytics_workspace_id  = module.log_analytics_workspace.id
+  source              = "./modules/firewall"
+  name                = local.firewall_name
+  resource_group_name = azurerm_resource_group.main.name
+  zones               = var.firewall_zones
+  threat_intel_mode   = var.firewall_threat_intel_mode
+  location            = var.location
+  sku_name            = var.firewall_sku_name
+  sku_tier            = var.firewall_sku_tier
+  pip_name            = "${var.firewall_name}PublicIp"
+  subnet_id           = module.hub_vnet.subnet_ids["AzureFirewallSubnet"]
+
+  dns_proxy_enabled        = true
+  threat_intelligence_mode = "Deny"
+
+  log_analytics_workspace_id = module.log_analytics_workspace.id
+  tags                       = local.tags
+
+  rule_collection_groups = {
+    "AksEgressPolicyRuleCollectionGroup" = {
+      priority = 500
+
+      application_rule_collections = [
+        {
+          name     = "AksAndOsDependencies"
+          priority = 300
+          action   = "Allow"
+          rules = [
+            {
+              name             = "AksRequired"
+              source_addresses = var.default_node_pool_subnet_address_prefix
+              destination_fqdns = [
+                "*.cdn.mscr.io",
+                "mcr.microsoft.com",
+                "*.data.mcr.microsoft.com",
+                "management.azure.com",
+                "login.microsoftonline.com",
+                "acs-mirror.azureedge.net",
+                "dc.services.visualstudio.com",
+                "*.opinsights.azure.com",
+                "*.oms.opinsights.azure.com",
+                "*.monitoring.azure.com"
+              ]
+              protocols = [
+                {
+                  type = "Https"
+                  port = 443
+                }
+              ]
+            },
+            {
+              name             = "OsAndContainerRegistries"
+              source_addresses = var.default_node_pool_subnet_address_prefix
+              destination_fqdns = [
+                "download.opensuse.org",
+                "security.ubuntu.com",
+                "ntp.ubuntu.com",
+                "packages.microsoft.com",
+                "auth.docker.io",
+                "registry-1.docker.io",
+                "production.cloudflare.docker.com",
+                "registry.k8s.io",
+                "ghcr.io",
+                "*.ghcr.io"
+              ]
+              protocols = [
+                {
+                  type = "Https"
+                  port = 443
+                }
+              ]
+            }
+          ]
+        },
+        {
+          name     = "GitHubActionsRunners"
+          priority = 200
+          action   = "Allow"
+          rules = [
+            {
+              name             = "GitHubRunnersRequired"
+              source_addresses = var.runner_node_pool_subnet_address_prefix
+              destination_fqdns = [
+                "github.com",
+                "api.github.com",
+                "codeload.github.com",
+                "pkg.actions.githubusercontent.com",
+                "*.actions.githubusercontent.com",
+                "results-receiver.actions.githubusercontent.com",
+                "*.blob.core.windows.net",
+                "objects.githubusercontent.com",
+                "objects-origin.githubusercontent.com",
+                "github-releases.githubusercontent.com",
+                "github-registry-files.githubusercontent.com",
+                "ghcr.io",
+                "*.pkg.github.com",
+                "pkg-containers.githubusercontent.com"
+              ]
+              protocols = [
+                {
+                  type = "Https"
+                  port = 443
+                }
+              ]
+            }
+          ]
+        }
+      ]
+
+      network_rule_collections = [
+        {
+          name     = "NetworkRules"
+          priority = 400
+          action   = "Allow"
+          rules = [
+            {
+              name                  = "TimeAndDns"
+              source_addresses      = var.default_node_pool_subnet_address_prefix
+              destination_ports     = ["123", "53"]
+              destination_addresses = ["*"]
+              protocols             = ["UDP"]
+            }
+          ]
+        }
+      ]
+    }
+  }
 }
 
 module "routetable" {
