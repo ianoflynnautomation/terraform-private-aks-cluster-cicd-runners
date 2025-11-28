@@ -434,6 +434,12 @@ resource "azurerm_role_assignment" "runner_identity_acr_pull" {
   principal_id         = azurerm_user_assigned_identity.actions_runner_controller.principal_id
 }
 
+resource "azurerm_role_assignment" "arc_identity_keyvault_reader" {
+  scope                = module.key_vault.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.actions_runner_controller.principal_id
+}
+
 resource "azurerm_federated_identity_credential" "actions_runner_controller" {
   name                = "${local.aks_name}-runner-controller-federated-id"
   resource_group_name = azurerm_resource_group.main.name
